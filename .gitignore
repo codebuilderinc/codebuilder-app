@@ -31,6 +31,16 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
 
 # typescript
 *.tsbuildinfo
+
+# Ignore the android google services config
+./google-services.json
+
+# Ignore the iOS Google Services config
+./GoogleService-Info.plist
+
+# You can also ignore any .env files or other secrets
+*.env
