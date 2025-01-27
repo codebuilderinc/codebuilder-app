@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "982053776531",
+    "project_id": "code-c4af1",
+    "storage_bucket": "code-c4af1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:982053776531:android:a7095fc6737fc235e3b166",
+        "android_client_info": {
+          "package_name": "com.digitalnomad91.codebuilderadmin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdDNSdl2ukCEpTy2tZ2IHz1lD3UiftQFo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
