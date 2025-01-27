@@ -1,8 +1,15 @@
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+// Resolve __dirname in ES module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const appConfigPath = path.join(__dirname, "../app.config.js");
-const appConfig = require(appConfigPath);
+
+// Import `app.config.js` dynamically
+const { default: appConfig } = await import(appConfigPath);
 
 // Split version into major.minor.patch
 const [major, minor, patch] = appConfig.expo.version.split(".").map(Number);
@@ -11,6 +18,7 @@ const newVersion = `${major}.${minor}.${patch + 1}`;
 // Update build number (Android versionCode)
 const newBuildNumber = (appConfig.expo.android.versionCode || 1) + 1;
 
+// Generate updated configuration
 const updatedConfig = `export default ${JSON.stringify(
   {
     ...appConfig,
@@ -31,5 +39,6 @@ const updatedConfig = `export default ${JSON.stringify(
   2
 ).replace(/"([^"]+)":/g, "$1:")};`;
 
+// Write updated configuration back to file
 fs.writeFileSync(appConfigPath, updatedConfig);
 console.log(`Updated to v${newVersion} (build ${newBuildNumber})`);
