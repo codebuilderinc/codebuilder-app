@@ -45,7 +45,7 @@ GoogleService-Info.plist
 # You can also ignore any .env files or other secrets
 *.env
 
-# Android / ioS Build Folders
+# Android / iOS Build Folders
 android/
 ios/
 web-build/
