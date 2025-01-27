@@ -8,8 +8,9 @@ export default {
   expo: {
     name: "CodeBuilder Admin",
     slug: "codebuilder",
-    version: "1.1.0",
+    version: process.env.APP_VERSION || "1.0.0",
     extra: {
+      buildDate: process.env.BUILD_DATE || new Date().toISOString(),
       eas: {
         projectId: "c382aeb5-b138-47fb-83b4-dc45ab02ce76",
       },
@@ -35,6 +36,7 @@ export default {
       backgroundColor: "#ffffff",
     },
     ios: {
+      buildNumber: process.env.BUILD_NUMBER || "1",
       supportsTablet: true,
       bundleIdentifier: "com.digitalnomad91.codebuilderadmin",
       googleServicesFile: "./GoogleService-Info.plist",
@@ -47,6 +49,7 @@ export default {
       },
     },
     android: {
+      versionCode: parseInt(process.env.BUILD_NUMBER || "1", 10),
       adaptiveIcon: {
         foregroundImage: "./assets/images/adaptive-icon.png",
         backgroundColor: "#ffffff",
