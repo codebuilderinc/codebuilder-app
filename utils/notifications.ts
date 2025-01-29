@@ -3,7 +3,6 @@ import messaging, {
   FirebaseMessagingTypes,
 } from "@react-native-firebase/messaging";
 import { Alert, PermissionsAndroid, Platform } from "react-native";
-import { router } from "expo-router";
 import * as Device from "expo-device";
 import { NOTIFICATION_STRINGS } from "../constants/Notifications";
 
@@ -111,6 +110,19 @@ export const savePushToken = async (token: string): Promise<void> => {
     console.error("Error saving push token to server:", error);
   }
 };
+
+// Example function to trigger a local notification
+export async function triggerLocalSampleNotification() {
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: "Job Notification",
+      body: "This is a test notification.",
+      sound: true,
+      data: { extraData: "Some data" },
+    },
+    trigger: null, // Send immediately
+  });
+}
 
 /**
  * DEPRACATED
