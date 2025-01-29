@@ -1,6 +1,6 @@
 //const dotenv = require("dotenv");
 import dotenv from "dotenv";
-const withNotificationToolsReplace = require("./plugins/test.cjs");
+import withNotificationToolsReplace from "./plugins/test.cjs";
 
 // Explicitly load the .env file
 dotenv.config();
