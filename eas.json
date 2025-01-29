@@ -26,7 +26,7 @@
     },
     "production": {
       "distribution": "store",
-      "autoIncrement": true,
+      "autoIncrement": false,
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleRelease"
