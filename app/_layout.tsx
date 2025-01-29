@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import * as Notifications from "expo-notifications";
+// import * as Notifications from "expo-notifications";
 import { useNavigationContainerRef } from "@react-navigation/native";
 import { useReactNavigationDevTools } from "@dev-plugins/react-navigation";
 import { SplashScreen } from "expo-router";
 import { usePushNotifications } from "../hooks/usePushNotifications";
 import { useNotificationObserver } from "../hooks/usePushNotifications";
-import { registerForPushNotificationsAsync } from "../utils/notifications";
-import { getFirebaseApp } from "@/utils/firebase";
+// import { registerForPushNotificationsAsync } from "../utils/notifications";
+// import { getFirebaseApp } from "@/utils/firebase";
 import { useFonts } from "expo-font";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import {
