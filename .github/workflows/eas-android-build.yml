@@ -11,8 +11,10 @@ env:
 
 jobs:
   build-android:
-    name: Build Android App
+    name: Build Android APK
     runs-on: ubuntu-latest
+    outputs:
+      build_id: ${{ steps.build.outputs.BUILD_ID }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -42,13 +44,22 @@ jobs:
           fi
 
           echo "BUILD_ID=$BUILD_ID" >> $GITHUB_ENV
+          echo "BUILD_ID=$BUILD_ID" >> $GITHUB_OUTPUT
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
+  download-apk:
+    name: Download APK
+    runs-on: ubuntu-latest
+    needs: build-android
+    outputs:
+      apk_path: ${{ steps.download.outputs.APK_PATH }}
+    steps:
       - name: Wait for EAS Build to Complete
         run: |
+          BUILD_ID=${{ needs.build-android.outputs.build_id }}
           RETRY_COUNT=0
-          MAX_RETRIES=20
+          MAX_RETRIES=50
           while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
             BUILD_STATUS_JSON=$(npx eas build:view --build-id $BUILD_ID --json 2>/dev/null)
             echo "Build status response: $BUILD_STATUS_JSON"
@@ -76,10 +87,28 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       - name: Download APK
+        id: download
         run: |
           echo "Downloading APK from: $APK_URL"
           curl -L $APK_URL -o app-release.apk
           ls -lh app-release.apk
+          echo "APK_PATH=app-release.apk" >> $GITHUB_OUTPUT
+
+      - name: Upload APK as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: app-release.apk
+
+  generate-changelog:
+    name: Generate Changelog
+    runs-on: ubuntu-latest
+    needs: build-android
+    outputs:
+      changelog: ${{ steps.changelog.outputs.CHANGELOG }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Generate Changelog
         id: changelog
@@ -92,13 +121,35 @@ jobs:
           echo "CHANGELOG<<EOF" >> $GITHUB_ENV
           cat changelog.txt >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
+          echo "CHANGELOG=$GITHUB_ENV" >> $GITHUB_OUTPUT
+
+      - name: Upload Changelog as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog
+          path: changelog.txt
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [download-apk, generate-changelog]
+    steps:
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apk
+
+      - name: Download Changelog artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: changelog
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
           name: Release v1.0.${{ github.run_number }}
-          body: ${{ env.CHANGELOG }}
+          body_path: changelog.txt
           draft: false
           prerelease: false
           files: app-release.apk
