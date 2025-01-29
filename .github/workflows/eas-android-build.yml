@@ -1,4 +1,4 @@
-name: EAS Android Build
+name: EAS Android Build & Release
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
 
 env:
   EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   build-android:
@@ -28,14 +29,50 @@ jobs:
       - name: Install EAS CLI
         run: npm install -g eas-cli@latest
 
-      - name: Build Production APK
-        run: npx eas build -p android --profile production --non-interactive
+      - name: Start EAS Build
+        id: build
+        run: |
+          BUILD_ID=$(npx eas build -p android --profile production --non-interactive --json | jq -r '.[0].id')
+          echo "BUILD_ID=$BUILD_ID" >> $GITHUB_ENV
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
-      # Optional: Add a preview build
-      - name: Build Preview APK
-        if: github.event_name == 'workflow_dispatch'
-        run: npx eas build -p android --profile preview --non-interactive
+      - name: Wait for EAS Build to Complete
+        run: |
+          while true; do
+            STATUS=$(npx eas build:view --build-id $BUILD_ID --json | jq -r '.status')
+            echo "Current Status: $STATUS"
+            if [ "$STATUS" == "finished" ]; then
+              DOWNLOAD_URL=$(npx eas build:view --build-id $BUILD_ID --json | jq -r '.artifacts.buildUrl')
+              echo "APK_URL=$DOWNLOAD_URL" >> $GITHUB_ENV
+              break
+            elif [ "$STATUS" == "errored" ]; then
+              echo "EAS build failed."
+              exit 1
+            fi
+            sleep 30
+          done
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          echo "Generating changelog..."
+          echo "## Changelog" > changelog.txt
+          echo "" >> changelog.txt
+          git log --pretty=format:"- %s (%h) by %an" $(git rev-parse HEAD^)..HEAD >> changelog.txt
+          cat changelog.txt
+          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+          cat changelog.txt >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Release v1.0.${{ github.run_number }}
+          body: ${{ env.CHANGELOG }}
+          draft: false
+          prerelease: false
+          files: ${{ env.APK_URL }}
