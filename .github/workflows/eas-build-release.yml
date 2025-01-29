@@ -29,7 +29,7 @@ jobs:
 
       - name: Update Version (Production)
         if: github.ref == 'refs/heads/main'
-        run: node scripts/version-update.js
+        run: node --input-type=module scripts/version-update.js
 
       - name: Set CI/CD Versions
         run: |
