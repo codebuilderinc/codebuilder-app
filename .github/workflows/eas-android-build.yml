@@ -32,28 +32,54 @@ jobs:
       - name: Start EAS Build
         id: build
         run: |
-          BUILD_ID=$(npx eas build -p android --profile production --non-interactive --json | jq -r '.[0].id')
+          BUILD_JSON=$(npx eas build -p android --profile production --non-interactive --json)
+          echo "EAS build response: $BUILD_JSON"
+
+          BUILD_ID=$(echo "$BUILD_JSON" | jq -r '.[0].id' 2>/dev/null)
+          if [[ -z "$BUILD_ID" || "$BUILD_ID" == "null" ]]; then
+            echo "Error: Failed to retrieve BUILD_ID!"
+            exit 1
+          fi
+
           echo "BUILD_ID=$BUILD_ID" >> $GITHUB_ENV
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       - name: Wait for EAS Build to Complete
         run: |
-          while true; do
-            STATUS=$(npx eas build:view --build-id $BUILD_ID --json | jq -r '.status')
-            echo "Current Status: $STATUS"
-            if [ "$STATUS" == "finished" ]; then
-              DOWNLOAD_URL=$(npx eas build:view --build-id $BUILD_ID --json | jq -r '.artifacts.buildUrl')
-              echo "APK_URL=$DOWNLOAD_URL" >> $GITHUB_ENV
+          RETRY_COUNT=0
+          MAX_RETRIES=20
+          while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
+            BUILD_STATUS_JSON=$(npx eas build:view --build-id $BUILD_ID --json 2>/dev/null)
+            echo "Build status response: $BUILD_STATUS_JSON"
+            
+            BUILD_STATUS=$(echo "$BUILD_STATUS_JSON" | jq -r '.status' 2>/dev/null)
+            if [[ -z "$BUILD_STATUS" || "$BUILD_STATUS" == "null" ]]; then
+              echo "Error: Failed to fetch build status!"
+              exit 1
+            fi
+            
+            echo "Current Status: $BUILD_STATUS"
+            if [[ "$BUILD_STATUS" == "finished" ]]; then
+              APK_URL=$(echo "$BUILD_STATUS_JSON" | jq -r '.artifacts.buildUrl' 2>/dev/null)
+              echo "APK_URL=$APK_URL" >> $GITHUB_ENV
               break
-            elif [ "$STATUS" == "errored" ]; then
+            elif [[ "$BUILD_STATUS" == "errored" ]]; then
               echo "EAS build failed."
               exit 1
             fi
+            
+            RETRY_COUNT=$((RETRY_COUNT+1))
             sleep 30
           done
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Download APK
+        run: |
+          echo "Downloading APK from: $APK_URL"
+          curl -L $APK_URL -o app-release.apk
+          ls -lh app-release.apk
 
       - name: Generate Changelog
         id: changelog
@@ -75,4 +101,4 @@ jobs:
           body: ${{ env.CHANGELOG }}
           draft: false
           prerelease: false
-          files: ${{ env.APK_URL }}
+          files: app-release.apk
