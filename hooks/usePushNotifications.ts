@@ -3,8 +3,8 @@ import {
   handleForegroundNotification,
   handleBackgroundNotifications,
   registerForPushNotificationsAsync,
-} from "../utils/notifications.new";
-import messaging from "@react-native-firebase/messaging";
+} from "../utils/notifications";
+//import messaging from "@react-native-firebase/messaging";
 import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
 import { getFirebaseApp } from "@/utils/firebase";
@@ -15,18 +15,15 @@ export const usePushNotifications = () => {
 
   useEffect(() => {
     const initializeNotifications = async () => {
-      // Initialize Firebase app
-      try {
-        getFirebaseApp();
-        console.log("Firebase initialized in RootLayout");
-      } catch (error) {
-        console.error("Firebase initialization error:", error);
-      }
+      getFirebaseApp();
 
       // Register for push notifications and get the push token
       registerForPushNotificationsAsync().then(async (token) => {
         if (token) {
-          console.log("FCM Token:", token);
+          console.log(
+            "Finished registerping for Notifications - FCM Token:",
+            token
+          );
           setFcmToken(token); // Store the push token
           globalFcmToken = token; // Update the global token
         }
