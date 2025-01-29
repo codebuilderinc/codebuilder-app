@@ -1,10 +1,10 @@
-import dotenv from "dotenv";
+const dotenv = require("dotenv");
 const withNotificationToolsReplace = require("./plugins/test.cjs");
 
 // Explicitly load the .env file
 dotenv.config();
-console.log("GOOGLEMAPSKEY", process.env.GOOGLE_MAPS_API_KEY);
-export default {
+
+module.exports = {
   expo: {
     name: "CodeBuilder Admin",
     slug: "codebuilder",
