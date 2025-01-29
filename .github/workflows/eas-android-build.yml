@@ -59,20 +59,42 @@ jobs:
         run: |
           BUILD_ID=${{ needs.build-android.outputs.build_id }}
           RETRY_COUNT=0
-          MAX_RETRIES=50
+          MAX_RETRIES=100
+
           while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
             BUILD_STATUS_JSON=$(npx eas build:view --build-id $BUILD_ID --json 2>/dev/null)
-            echo "Build status response: $BUILD_STATUS_JSON"
+            
+            # Debug: Log raw response to see what is returned
+            echo "Build status raw response: $BUILD_STATUS_JSON"
+            
+            # Ensure response is not empty
+            if [[ -z "$BUILD_STATUS_JSON" || "$BUILD_STATUS_JSON" == "null" ]]; then
+              echo "Error: Failed to fetch build status! Retrying..."
+              RETRY_COUNT=$((RETRY_COUNT+1))
+              sleep 30
+              continue
+            fi
             
             BUILD_STATUS=$(echo "$BUILD_STATUS_JSON" | jq -r '.status' 2>/dev/null)
+
+            # Ensure status is valid
             if [[ -z "$BUILD_STATUS" || "$BUILD_STATUS" == "null" ]]; then
-              echo "Error: Failed to fetch build status!"
-              exit 1
+              echo "Error: Build status is empty! Retrying..."
+              RETRY_COUNT=$((RETRY_COUNT+1))
+              sleep 30
+              continue
             fi
             
             echo "Current Status: $BUILD_STATUS"
+            
             if [[ "$BUILD_STATUS" == "finished" ]]; then
               APK_URL=$(echo "$BUILD_STATUS_JSON" | jq -r '.artifacts.buildUrl' 2>/dev/null)
+              
+              if [[ -z "$APK_URL" || "$APK_URL" == "null" ]]; then
+                echo "Error: APK URL not found!"
+                exit 1
+              fi
+
               echo "APK_URL=$APK_URL" >> $GITHUB_ENV
               break
             elif [[ "$BUILD_STATUS" == "errored" ]]; then
@@ -83,6 +105,11 @@ jobs:
             RETRY_COUNT=$((RETRY_COUNT+1))
             sleep 30
           done
+
+          if [[ $RETRY_COUNT -eq $MAX_RETRIES ]]; then
+            echo "Error: Build did not complete within the expected time!"
+            exit 1
+          fi
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
