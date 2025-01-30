@@ -41,6 +41,12 @@ jobs:
         run: |
           echo "Starting EAS build..."
 
+          # Ensure jq is installed
+          if ! command -v jq &> /dev/null; then
+            echo "jq could not be found"
+            exit 1
+          fi
+
           BUILD_JSON=$(npx eas build -p android --profile production --non-interactive --json --verbose 2>&1)
           echo "EAS build response: $BUILD_JSON"
 
