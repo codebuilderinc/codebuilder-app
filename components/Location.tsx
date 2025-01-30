@@ -5,15 +5,18 @@ import {
   Button,
   ActivityIndicator,
   StyleSheet,
-  useColorScheme,
+  //useColorScheme,
 } from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { useLocation } from "../hooks/useLocation";
+import { useNavigation } from "@react-navigation/native";
 
 export default function LocationComponent() {
   const { location, address, error, loading, fetchLocation } = useLocation();
-  const colorScheme = useColorScheme(); // Get the current color scheme
-  const textColor = colorScheme === "dark" ? "#ffffff" : "#000000"; // Dynamic text color
+  //const colorScheme = useColorScheme(); // Get the current color scheme
+  //const textColor = colorScheme === "dark" ? "#ffffff" : "#000000"; // Dynamic text color
+  const textColor = "#ffffff";
+  console.log("Navigation context:", useNavigation());
 
   return (
     <View style={styles.container}>
@@ -34,7 +37,7 @@ export default function LocationComponent() {
           {/* Native Map */}
           <View style={styles.mapContainer}>
             <MapView
-              provider={PROVIDER_GOOGLE}
+              //provider={PROVIDER_GOOGLE}
               style={styles.map}
               region={
                 location
@@ -91,10 +94,13 @@ const styles = StyleSheet.create({
   },
   mapContainer: {
     width: "100%",
-    height: 300,
+    height: 300, // Ensure a fixed height
     marginTop: 16,
+    borderRadius: 10,
+    overflow: "hidden",
   },
   map: {
-    flex: 1,
+    width: "100%", // Explicit width
+    height: "100%", // Explicit height
   },
 });
