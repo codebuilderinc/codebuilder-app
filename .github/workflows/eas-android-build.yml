@@ -67,35 +67,45 @@ jobs:
       - name: Wait for EAS Build to Complete
         run: |
           BUILD_ID=${{ needs.build-android.outputs.build_id }}
+
+          if [[ -z "$BUILD_ID" || "$BUILD_ID" == "null" ]]; then
+            echo "Error: BUILD_ID is missing or invalid!"
+            exit 1
+          fi
+
+          echo "Waiting for EAS Build to complete..."
+          echo "BUILD_ID: $BUILD_ID"
+
           RETRY_COUNT=0
           MAX_RETRIES=100
+          SLEEP_TIME=30
 
           while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
             BUILD_STATUS_JSON=$(npx eas build:view --build-id $BUILD_ID --json 2>/dev/null)
             
             # Debug: Log raw response to see what is returned
             echo "Build status raw response: $BUILD_STATUS_JSON"
-            
-            # Ensure response is not empty
+
+            # Check if response is empty
             if [[ -z "$BUILD_STATUS_JSON" || "$BUILD_STATUS_JSON" == "null" ]]; then
-              echo "Error: Failed to fetch build status! Retrying..."
+              echo "Error: Failed to fetch build status! Retrying in $SLEEP_TIME seconds..."
               RETRY_COUNT=$((RETRY_COUNT+1))
-              sleep 30
+              sleep $SLEEP_TIME
               continue
             fi
-            
+
             BUILD_STATUS=$(echo "$BUILD_STATUS_JSON" | jq -r '.status' 2>/dev/null)
 
-            # Ensure status is valid
+            # Check if status is valid
             if [[ -z "$BUILD_STATUS" || "$BUILD_STATUS" == "null" ]]; then
               echo "Error: Build status is empty! Retrying..."
               RETRY_COUNT=$((RETRY_COUNT+1))
-              sleep 30
+              sleep $SLEEP_TIME
               continue
             fi
             
-            echo "Current Status: $BUILD_STATUS"
-            
+            echo "Current Build Status: $BUILD_STATUS"
+
             if [[ "$BUILD_STATUS" == "finished" ]]; then
               APK_URL=$(echo "$BUILD_STATUS_JSON" | jq -r '.artifacts.buildUrl' 2>/dev/null)
               
@@ -110,9 +120,9 @@ jobs:
               echo "EAS build failed."
               exit 1
             fi
-            
+
             RETRY_COUNT=$((RETRY_COUNT+1))
-            sleep 30
+            sleep $SLEEP_TIME
           done
 
           if [[ $RETRY_COUNT -eq $MAX_RETRIES ]]; then
@@ -160,32 +170,4 @@ jobs:
           echo "CHANGELOG=$GITHUB_ENV" >> $GITHUB_OUTPUT
 
       - name: Upload Changelog as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: changelog
-          path: changelog.txt
-
-  create-release:
-    name: Create GitHub Release
-    runs-on: ubuntu-latest
-    needs: [download-apk, generate-changelog]
-    steps:
-      - name: Download APK artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: android-apk
-
-      - name: Download Changelog artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: changelog
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v1.0.${{ github.run_number }}
-          name: Release v1.0.${{ github.run_number }}
-          body_path: changelog.txt
-          draft: false
-          prerelease: false
-          files: app-release.apk
+        uses: actions
