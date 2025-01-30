@@ -89,6 +89,7 @@ jobs:
           SLEEP_TIME=30
 
           while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
+            echo "Starting retry #$RETRY_COUNT..."
             BUILD_STATUS_JSON=$(npx eas build:view --json $BUILD_ID 2>/dev/null)
             
             if [[ -z "$BUILD_STATUS_JSON" || "$BUILD_STATUS_JSON" == "null" ]]; then
