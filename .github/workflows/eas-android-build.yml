@@ -83,7 +83,7 @@ jobs:
           SLEEP_TIME=30
 
           while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
-            BUILD_STATUS_JSON=$(npx eas build:view --build-id $BUILD_ID --json 2>/dev/null)
+            BUILD_STATUS_JSON=$(npx eas build:view --build-id --json 2>/dev/null)
             
             echo "Build status raw response: $BUILD_STATUS_JSON"
 
