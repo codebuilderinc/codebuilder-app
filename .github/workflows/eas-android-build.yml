@@ -41,10 +41,8 @@ jobs:
         run: |
           echo "Starting EAS build..."
 
-          # Ensure jq is installed
           if ! command -v jq &> /dev/null; then
-            echo "jq could not be found"
-            exit 1
+            sudo apt-get install -y jq
           fi
 
           BUILD_ID=$(npx eas build -p android --profile production --non-interactive --json | jq -r '.[0].id')
@@ -66,6 +64,14 @@ jobs:
     outputs:
       apk_path: ${{ steps.download.outputs.APK_PATH }}
     steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Install EAS CLI
+        run: npm install -g eas-cli@latest
+
       - name: Wait for EAS Build to Complete
         run: |
           BUILD_ID=${{ needs.build-android.outputs.build_id }}
@@ -83,10 +89,8 @@ jobs:
           SLEEP_TIME=30
 
           while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
-            BUILD_STATUS_JSON=$(npx eas build:view --json 2>/dev/null)
+            BUILD_STATUS_JSON=$(npx eas build:view --json $BUILD_ID 2>/dev/null)
             
-            echo "Build status raw response: $BUILD_STATUS_JSON"
-
             if [[ -z "$BUILD_STATUS_JSON" || "$BUILD_STATUS_JSON" == "null" ]]; then
               echo "Error: Failed to fetch build status! Retrying in $SLEEP_TIME seconds..."
               RETRY_COUNT=$((RETRY_COUNT+1))
@@ -166,7 +170,7 @@ jobs:
           echo "CHANGELOG<<EOF" >> $GITHUB_ENV
           cat changelog.txt >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
-          echo "CHANGELOG=$GITHUB_ENV" >> $GITHUB_OUTPUT
+          echo "CHANGELOG=$(cat changelog.txt)" >> $GITHUB_OUTPUT
 
       - name: Upload Changelog as artifact
         uses: actions/upload-artifact@v4
