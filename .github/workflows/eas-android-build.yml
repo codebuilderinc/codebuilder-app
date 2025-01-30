@@ -91,6 +91,7 @@ jobs:
             
             # Get build status with full error visibility
             echo "Fetching build status..."
+            npx eas build:view --json $BUILD_ID
             BUILD_STATUS_JSON=$(npx eas build:view --json $BUILD_ID)
             echo "Raw API response: $BUILD_STATUS_JSON"
 
