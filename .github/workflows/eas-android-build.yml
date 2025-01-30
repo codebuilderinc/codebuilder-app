@@ -36,7 +36,6 @@ jobs:
         run: |
           echo "Starting EAS build..."
 
-          # Start the build and capture the BUILD_ID
           BUILD_JSON=$(npx eas build -p android --profile production --non-interactive --json --verbose)
           echo "EAS build response: $BUILD_JSON"
 
@@ -50,7 +49,6 @@ jobs:
           echo "BUILD_ID=$BUILD_ID" >> $GITHUB_ENV
           echo "BUILD_ID=$BUILD_ID" >> $GITHUB_OUTPUT
 
-          # Stream real-time logs for the build
           echo "Streaming build logs..."
           npx eas build:logs --build-id $BUILD_ID
 
@@ -83,10 +81,8 @@ jobs:
           while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
             BUILD_STATUS_JSON=$(npx eas build:view --build-id $BUILD_ID --json 2>/dev/null)
             
-            # Debug: Log raw response to see what is returned
             echo "Build status raw response: $BUILD_STATUS_JSON"
 
-            # Check if response is empty
             if [[ -z "$BUILD_STATUS_JSON" || "$BUILD_STATUS_JSON" == "null" ]]; then
               echo "Error: Failed to fetch build status! Retrying in $SLEEP_TIME seconds..."
               RETRY_COUNT=$((RETRY_COUNT+1))
@@ -96,7 +92,6 @@ jobs:
 
             BUILD_STATUS=$(echo "$BUILD_STATUS_JSON" | jq -r '.status' 2>/dev/null)
 
-            # Check if status is valid
             if [[ -z "$BUILD_STATUS" || "$BUILD_STATUS" == "null" ]]; then
               echo "Error: Build status is empty! Retrying..."
               RETRY_COUNT=$((RETRY_COUNT+1))
@@ -170,4 +165,32 @@ jobs:
           echo "CHANGELOG=$GITHUB_ENV" >> $GITHUB_OUTPUT
 
       - name: Upload Changelog as artifact
-        uses: actions
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog
+          path: changelog.txt
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [download-apk, generate-changelog]
+    steps:
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apk
+
+      - name: Download Changelog artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: changelog
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Release v1.0.${{ github.run_number }}
+          body_path: changelog.txt
+          draft: false
+          prerelease: false
+          files: app-release.apk
