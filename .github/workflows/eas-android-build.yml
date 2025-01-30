@@ -31,12 +31,17 @@ jobs:
       - name: Install EAS CLI
         run: npm install -g eas-cli@latest
 
+      - name: Debug Expo Authentication
+        run: |
+          echo "Checking Expo authentication..."
+          npx eas whoami --token $EXPO_TOKEN || echo "Expo token is invalid!"
+
       - name: Start EAS Build (With Logs)
         id: build
         run: |
           echo "Starting EAS build..."
 
-          BUILD_JSON=$(npx eas build -p android --profile production --non-interactive --json --verbose)
+          BUILD_JSON=$(npx eas build -p android --profile production --non-interactive --json --verbose 2>&1)
           echo "EAS build response: $BUILD_JSON"
 
           BUILD_ID=$(echo "$BUILD_JSON" | jq -r '.[0].id' 2>/dev/null)
@@ -51,7 +56,6 @@ jobs:
 
           echo "Streaming build logs..."
           npx eas build:logs --build-id $BUILD_ID
-
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
