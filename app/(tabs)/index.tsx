@@ -1,4 +1,3 @@
-import React from "react";
 import {
   View,
   Text,
@@ -6,112 +5,133 @@ import {
   ActivityIndicator,
   StyleSheet,
   Image,
-  //useColorScheme,
+  ScrollView,
 } from "react-native";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, { Marker } from "react-native-maps";
 import { useLocation } from "../../hooks/useLocation";
+import LogViewer from "../../components/LogViewer";
+import BatteryInfo from "../../components/BatteryInfo";
 
 export default function LocationComponent() {
   const { location, address, error, loading, fetchLocation } = useLocation();
-  //const colorScheme = useColorScheme(); // Get the current color scheme
-  //const textColor = colorScheme === "dark" ? "#ffffff" : "#000000"; // Dynamic text color
+
   const textColor = "#ffffff";
 
   return (
-    <View style={styles.container}>
-      <Image
-        source={require("../../assets/images/icon.png")}
-        style={imgStyles.image}
-      />
-      {loading ? (
-        <ActivityIndicator size="large" color="#007AFF" />
-      ) : error ? (
-        <Text style={[styles.text, { color: textColor }]}>{error}</Text>
-      ) : location && address ? (
-        <>
-          <Text style={[styles.text, { color: textColor }]}>
-            Address: {address.name}, {address.city}, {address.region},{" "}
-            {address.country}
-          </Text>
-          <Text style={[styles.text, { color: textColor }]}>
-            {location.coords.latitude} -{location.coords.longitude}
-          </Text>
+    <ScrollView contentContainerStyle={styles.scrollContent}>
+      <View style={styles.container}>
+        <Image
+          source={require("../../assets/images/icon.png")}
+          style={imgStyles.image}
+        />
 
-          {/* Native Map */}
-          <View style={styles.mapContainer}>
-            <MapView
-              //provider={PROVIDER_GOOGLE}
-              style={styles.map}
-              region={
-                location
-                  ? {
+        <LogViewer />
+
+        {/* Battery information */}
+        <BatteryInfo />
+
+        {/* Location / Map */}
+        {loading ? (
+          <ActivityIndicator size="large" color="#007AFF" />
+        ) : error ? (
+          <Text style={[styles.text, { color: textColor }]}>{error}</Text>
+        ) : location && address ? (
+          <>
+            <Text style={[styles.text, { color: textColor }]}>
+              Address: {address.name}, {address.city}, {address.region},{" "}
+              {address.country}
+            </Text>
+            <Text style={[styles.text, { color: textColor }]}>
+              {location.coords.latitude} - {location.coords.longitude}
+            </Text>
+
+            <View style={styles.mapContainer}>
+              <MapView
+                style={styles.map}
+                region={
+                  location
+                    ? {
+                        latitude: location.coords.latitude,
+                        longitude: location.coords.longitude,
+                        latitudeDelta: 0.01,
+                        longitudeDelta: 0.01,
+                      }
+                    : {
+                        latitude: 37.7749, // Default to San Francisco
+                        longitude: -122.4194,
+                        latitudeDelta: 0.05,
+                        longitudeDelta: 0.05,
+                      }
+                }
+                showsUserLocation={true}
+                loadingEnabled={true}
+              >
+                {location && (
+                  <Marker
+                    coordinate={{
                       latitude: location.coords.latitude,
                       longitude: location.coords.longitude,
-                      latitudeDelta: 0.01,
-                      longitudeDelta: 0.01,
-                    }
-                  : {
-                      latitude: 37.7749, // Default to San Francisco
-                      longitude: -122.4194,
-                      latitudeDelta: 0.05,
-                      longitudeDelta: 0.05,
-                    }
-              }
-              showsUserLocation={true} // Show user's current location
-              loadingEnabled={true} // Show a loading indicator while the map loads
-            >
-              {location && (
-                <Marker
-                  coordinate={{
-                    latitude: location.coords.latitude,
-                    longitude: location.coords.longitude,
-                  }}
-                  title="You are here"
-                />
-              )}
-            </MapView>
-          </View>
-        </>
-      ) : (
-        <Text style={[styles.text, { color: textColor }]}>
-          Waiting for location...
-        </Text>
-      )}
+                    }}
+                    title="You are here"
+                  />
+                )}
+              </MapView>
+            </View>
+          </>
+        ) : (
+          <Text style={[styles.text, { color: textColor }]}>
+            Waiting for location...
+          </Text>
+        )}
 
-      <Button title="Get Location" onPress={fetchLocation} />
-    </View>
+        <Button title="Get Location" onPress={fetchLocation} />
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
+  scrollContent: {
+    paddingVertical: 20,
     alignItems: "center",
-    padding: 16,
+  },
+  container: {
+    width: "90%",
+    alignItems: "center",
   },
   text: {
     fontSize: 16,
-    marginBottom: 16,
+    marginVertical: 8,
     textAlign: "center",
+  },
+  batteryContainer: {
+    borderRadius: 8,
+    padding: 10,
+    marginVertical: 12,
+    width: "100%",
+  },
+  batteryText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    marginBottom: 4,
   },
   mapContainer: {
     width: "100%",
-    height: 300, // Ensure a fixed height
+    height: 300,
     marginTop: 16,
     borderRadius: 10,
     overflow: "hidden",
   },
   map: {
-    width: "100%", // Explicit width
-    height: "100%", // Explicit height
+    width: "100%",
+    height: "100%",
   },
 });
 
 const imgStyles = StyleSheet.create({
   image: {
-    width: 200, // Adjust as needed
-    height: 200, // Adjust as needed
-    resizeMode: "contain", // Optional: Adjust image resizing behavior
+    width: 50,
+    height: 50,
+    resizeMode: "contain",
   },
 });
