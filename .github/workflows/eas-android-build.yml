@@ -122,7 +122,7 @@ jobs:
             [[ -n "$ERROR_MESSAGE" ]] && echo "Error message: $ERROR_MESSAGE"
 
             case $BUILD_STATUS in
-              "finished")
+              "FINISHED")
                 APK_URL=$(echo "$BUILD_STATUS_JSON" | jq -r '.artifacts.buildUrl')
                 if [[ -z "$APK_URL" || "$APK_URL" == "null" ]]; then
                   echo "Error: Successful build but no APK URL found!"
@@ -132,7 +132,7 @@ jobs:
                 exit 0
                 ;;
 
-            "errored"|"canceled")
+            "ERRORED"|"CANCELLED")
               if [[ "$BUILD_STATUS" == "canceled" ]]; then
                 echo "Build was canceled! Details:"
               else
@@ -142,7 +142,7 @@ jobs:
               exit 1
               ;;
 
-              "new"|"in_queue"|"in_progress"|"pending")
+              "NEW"|"IN_QUE"|"IN_PROGRESS"|"PENDING")
                 echo "Build is still in progress..."
                 ;;
 
