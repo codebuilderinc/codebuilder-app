@@ -66,6 +66,9 @@ jobs:
     outputs:
       apk_path: ${{ steps.download.outputs.APK_PATH }}
     steps:
+      - name: Checkout repository # Fix added here
+        uses: actions/checkout@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -77,32 +80,36 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y jq curl
 
+      - name: Verify Project Files # Added verification step
+        run: |
+          echo "Current directory contents:"
+          ls -la
+          echo "Checking for eas.json:"
+          cat eas.json || echo "No eas.json found!"
+
       - name: Wait for EAS Build to Complete
         run: |
           BUILD_ID=${{ needs.build-android.outputs.build_id }}
           echo "Starting build monitoring for BUILD_ID: $BUILD_ID"
-          npx eas build:view --json $BUILD_ID
+
+          # Initial check without JSON for better error visibility
+          npx eas build:view $BUILD_ID || true
 
           RETRY_COUNT=0
-          MAX_RETRIES=120  # 120 attempts * 30 seconds = 60 minutes
+          MAX_RETRIES=120
           SLEEP_TIME=30
 
           while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
             echo -e "\n=== Attempt $((RETRY_COUNT+1))/$MAX_RETRIES ==="
             
-            # Get build status with full error visibility
-            echo "Fetching build status..."
-            npx eas build:view --json $BUILD_ID
             BUILD_STATUS_JSON=$(npx eas build:view --json $BUILD_ID)
             echo "Raw API response: $BUILD_STATUS_JSON"
 
-            # Validate JSON structure
             if ! echo "$BUILD_STATUS_JSON" | jq empty >/dev/null 2>&1; then
               echo "Error: Invalid JSON response from EAS API!"
               exit 1
             fi
 
-            # Parse status fields
             BUILD_STATUS=$(echo "$BUILD_STATUS_JSON" | jq -r '.status')
             ERROR_MESSAGE=$(echo "$BUILD_STATUS_JSON" | jq -r '.error.message // empty')
 
@@ -114,16 +121,14 @@ jobs:
                 APK_URL=$(echo "$BUILD_STATUS_JSON" | jq -r '.artifacts.buildUrl')
                 if [[ -z "$APK_URL" || "$APK_URL" == "null" ]]; then
                   echo "Error: Successful build but no APK URL found!"
-                  echo "Full response: $BUILD_STATUS_JSON"
                   exit 1
                 fi
                 echo "APK_URL=$APK_URL" >> $GITHUB_ENV
-                echo "Build completed successfully!"
                 exit 0
                 ;;
 
               "errored")
-                echo "Build failed! Error details:"
+                echo "Build failed! Full details:"
                 echo "$BUILD_STATUS_JSON" | jq .
                 exit 1
                 ;;
@@ -139,17 +144,15 @@ jobs:
 
               *)
                 echo "Unknown build status: $BUILD_STATUS"
-                echo "Full response: $BUILD_STATUS_JSON"
                 exit 1
                 ;;
             esac
 
             RETRY_COUNT=$((RETRY_COUNT+1))
-            echo "Waiting $SLEEP_TIME seconds before next check..."
             sleep $SLEEP_TIME
           done
 
-          echo "Error: Build did not complete within $((MAX_RETRIES * SLEEP_TIME / 60)) minutes!"
+          echo "Error: Build timeout!"
           exit 1
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -159,8 +162,8 @@ jobs:
         run: |
           echo "Downloading APK from: $APK_URL"
           curl -L -o app-release.apk "$APK_URL"
-          ls -lh app-release.apk
           echo "APK_PATH=app-release.apk" >> $GITHUB_OUTPUT
+          echo "Downloaded APK size: $(du -h app-release.apk | cut -f1)"
 
       - name: Upload APK as artifact
         uses: actions/upload-artifact@v4
@@ -181,13 +184,11 @@ jobs:
       - name: Generate Changelog
         id: changelog
         run: |
-          echo "Generating changelog..."
           git fetch --prune --unshallow 2> /dev/null || true
           echo "## Changelog" > changelog.txt
           echo "" >> changelog.txt
           git log --pretty=format:"- %s (%h) by %an" $(git rev-parse HEAD^)..HEAD >> changelog.txt
           echo "CHANGELOG=$(cat changelog.txt)" >> $GITHUB_OUTPUT
-          cat changelog.txt
 
       - name: Upload Changelog as artifact
         uses: actions/upload-artifact@v4
