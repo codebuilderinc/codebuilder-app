@@ -185,15 +185,37 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Ensures full history is available
 
       - name: Generate Changelog
         id: changelog
         run: |
-          git fetch --prune --unshallow 2> /dev/null || true
-          echo "## Changelog" > changelog.txt
-          echo "" >> changelog.txt
-          git log --pretty=format:"- %s (%h) by %an" $(git rev-parse HEAD^)..HEAD >> changelog.txt
-          echo "CHANGELOG=$(cat changelog.txt)" >> $GITHUB_OUTPUT
+          echo "Generating changelog..."
+
+          # Ensure full history is available
+          git fetch --prune --unshallow || true
+
+          # Generate changelog from the last 10 commits
+          CHANGELOG=$(git log --pretty=format:"- %s (%h) by %an" -n 10 | sed 's/"/\\"/g' | tr -d '\r')
+
+          # Output the changelog for debugging
+          echo "Changelog:"
+          echo "$CHANGELOG"
+
+          # Store changelog in environment variable safely
+          {
+            echo 'CHANGELOG<<EOF'
+            echo "$CHANGELOG"
+            echo 'EOF'
+          } >> "$GITHUB_ENV"
+
+          # Store changelog in GITHUB_OUTPUT so it can be used in later steps
+          {
+            echo 'CHANGELOG<<EOF'
+            echo "$CHANGELOG"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
 
       - name: Upload Changelog as artifact
         uses: actions/upload-artifact@v4
