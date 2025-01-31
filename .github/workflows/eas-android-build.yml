@@ -42,11 +42,9 @@ jobs:
           echo "Starting EAS build..."
           sudo apt-get install -y jq
 
-          # Run build and capture JSON output
           BUILD_JSON=$(npx eas build -p android --profile production --non-interactive --json)
           echo "Raw build output: $BUILD_JSON"
 
-          # Extract BUILD_ID
           BUILD_ID=$(echo "$BUILD_JSON" | jq -r '.[0].id')
           if [[ -z "$BUILD_ID" || "$BUILD_ID" == "null" ]]; then
             echo "Error: Failed to retrieve BUILD_ID!"
@@ -66,10 +64,8 @@ jobs:
     outputs:
       apk_path: ${{ steps.download.outputs.APK_PATH }}
     steps:
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Install Required Tools
         run: |
@@ -79,30 +75,27 @@ jobs:
 
       - name: Wait for EAS Build to Complete
         run: |
+          cd $GITHUB_WORKSPACE
           BUILD_ID=${{ needs.build-android.outputs.build_id }}
           echo "Starting build monitoring for BUILD_ID: $BUILD_ID"
-          npx eas build:view --json $BUILD_ID
 
           RETRY_COUNT=0
-          MAX_RETRIES=120  # 120 attempts * 30 seconds = 60 minutes
+          MAX_RETRIES=120
           SLEEP_TIME=30
 
           while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
             echo -e "\n=== Attempt $((RETRY_COUNT+1))/$MAX_RETRIES ==="
             
-            # Get build status with full error visibility
-            echo "Fetching build status..."
-            npx eas build:view --json $BUILD_ID
-            BUILD_STATUS_JSON=$(npx eas build:view --json $BUILD_ID)
+            BUILD_STATUS_JSON=$(npx eas build:view --json $BUILD_ID 2>/dev/null)
             echo "Raw API response: $BUILD_STATUS_JSON"
 
-            # Validate JSON structure
-            if ! echo "$BUILD_STATUS_JSON" | jq empty >/dev/null 2>&1; then
-              echo "Error: Invalid JSON response from EAS API!"
-              exit 1
+            if [[ -z "$BUILD_STATUS_JSON" || "$BUILD_STATUS_JSON" == "null" ]]; then
+              echo "Error: Invalid response from EAS API! Retrying..."
+              RETRY_COUNT=$((RETRY_COUNT+1))
+              sleep $SLEEP_TIME
+              continue
             fi
 
-            # Parse status fields
             BUILD_STATUS=$(echo "$BUILD_STATUS_JSON" | jq -r '.status')
             ERROR_MESSAGE=$(echo "$BUILD_STATUS_JSON" | jq -r '.error.message // empty')
 
@@ -113,33 +106,25 @@ jobs:
               "finished")
                 APK_URL=$(echo "$BUILD_STATUS_JSON" | jq -r '.artifacts.buildUrl')
                 if [[ -z "$APK_URL" || "$APK_URL" == "null" ]]; then
-                  echo "Error: Successful build but no APK URL found!"
-                  echo "Full response: $BUILD_STATUS_JSON"
+                  echo "Error: Build finished but APK URL is missing!"
                   exit 1
                 fi
                 echo "APK_URL=$APK_URL" >> $GITHUB_ENV
-                echo "Build completed successfully!"
                 exit 0
                 ;;
 
-              "errored")
+              "errored"|"canceled")
                 echo "Build failed! Error details:"
                 echo "$BUILD_STATUS_JSON" | jq .
                 exit 1
                 ;;
 
-              "canceled")
-                echo "Build was canceled!"
-                exit 1
-                ;;
-
               "new"|"in_queue"|"in_progress"|"pending")
-                echo "Build still in progress..."
+                echo "Build is still in progress..."
                 ;;
 
               *)
                 echo "Unknown build status: $BUILD_STATUS"
-                echo "Full response: $BUILD_STATUS_JSON"
                 exit 1
                 ;;
             esac
@@ -149,7 +134,7 @@ jobs:
             sleep $SLEEP_TIME
           done
 
-          echo "Error: Build did not complete within $((MAX_RETRIES * SLEEP_TIME / 60)) minutes!"
+          echo "Error: Build did not complete within the expected time!"
           exit 1
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -158,7 +143,7 @@ jobs:
         id: download
         run: |
           echo "Downloading APK from: $APK_URL"
-          curl -L -o app-release.apk "$APK_URL"
+          curl -L "$APK_URL" -o app-release.apk
           ls -lh app-release.apk
           echo "APK_PATH=app-release.apk" >> $GITHUB_OUTPUT
 
