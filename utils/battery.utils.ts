@@ -64,10 +64,17 @@ export const removeBatteryListener = (
  */
 export const openBatteryOptimizationSettings = () => {
   if (Platform.OS === "android" && BatteryOptimizationHelper) {
+    console.log(
+      "Opening battery optimization settings...",
+      Platform.OS,
+      BatteryOptimizationHelper
+    );
     BatteryOptimizationHelper.autoHighlightApp();
   } else {
-    console.warn(
-      "Battery optimization settings are only available on Android."
+    console.log(
+      "Battery optimization settings are only available on Android.",
+      Platform.OS,
+      BatteryOptimizationHelper
     );
   }
 };
