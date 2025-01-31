@@ -8,31 +8,20 @@ const androidManifestPath = path.join(
   __dirname,
   "../android/app/src/main/AndroidManifest.xml"
 );
-const javaMainApplicationPath = path.join(
-  __dirname,
-  "../android/app/src/main/java/com/digitalnomad91/codebuilderadmin/MainApplication.java"
-);
 const kotlinMainApplicationPath = path.join(
   __dirname,
   "../android/app/src/main/java/com/digitalnomad91/codebuilderadmin/MainApplication.kt"
-);
-const javaHelperPath = path.join(
-  __dirname,
-  "../android/app/src/main/java/com/digitalnomad91/codebuilderadmin/BatteryOptimizationHelper.java"
 );
 const kotlinHelperPath = path.join(
   __dirname,
   "../android/app/src/main/java/com/digitalnomad91/codebuilderadmin/BatteryOptimizationHelper.kt"
 );
 
-// Determine whether the project uses Java or Kotlin
-const isKotlin = fs.existsSync(kotlinMainApplicationPath);
-const mainApplicationPath = isKotlin
-  ? kotlinMainApplicationPath
-  : javaMainApplicationPath;
-const helperPath = isKotlin ? kotlinHelperPath : javaHelperPath;
+// Check if the app uses Kotlin
+const mainApplicationPath = kotlinMainApplicationPath;
+const helperPath = kotlinHelperPath;
 
-console.log(`🔍 Detected ${isKotlin ? "Kotlin" : "Java"} project`);
+console.log("🔍 Detected Kotlin project");
 
 // 🟢 1. Ensure `AndroidManifest.xml` has the required permission
 const addPermissionToManifest = async () => {
@@ -41,7 +30,6 @@ const addPermissionToManifest = async () => {
     const permission =
       '<uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />';
 
-    // Ensure the permission is inside <manifest> but before <application>
     if (!manifest.includes(permission)) {
       manifest = manifest.replace(
         /<manifest[^>]*>/,
@@ -62,57 +50,24 @@ const addPermissionToManifest = async () => {
   }
 };
 
-// 🟢 2. Create the `BatteryOptimizationHelper` module in either Java or Kotlin
-const javaHelperCode = `
-package com.digitalnomad91.codebuilderadmin;
-
-import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
-import android.provider.Settings;
-import com.facebook.react.bridge.ReactApplicationContext;
-import com.facebook.react.bridge.ReactContextBaseJavaModule;
-import com.facebook.react.bridge.ReactMethod;
-
-public class BatteryOptimizationHelper extends ReactContextBaseJavaModule {
-
-    public BatteryOptimizationHelper(ReactApplicationContext reactContext) {
-        super(reactContext);
-    }
-
-    @Override
-    public String getName() {
-        return "BatteryOptimizationHelper";
-    }
-
-    @ReactMethod
-    public void autoHighlightApp() {
-        try {
-            Context context = getReactApplicationContext();
-            Intent intent = new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
-            intent.setData(Uri.parse("package:${packageName}"));
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(intent);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-}
-`;
-
+// 🟢 2. Create `BatteryOptimizationHelper.kt` with improved logic
 const kotlinHelperCode = `
-package com.digitalnomad91.codebuilderadmin
+package ${packageName}
 
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import android.util.Log
+import com.facebook.react.ReactPackage
+import com.facebook.react.bridge.NativeModule
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.uimanager.ViewManager
 
 class BatteryOptimizationHelper(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
-    
+
     override fun getName(): String {
         return "BatteryOptimizationHelper"
     }
@@ -121,42 +76,63 @@ class BatteryOptimizationHelper(reactContext: ReactApplicationContext) : ReactCo
     fun autoHighlightApp() {
         try {
             val context: Context = reactApplicationContext
-            val packageName = context.packageName // ✅ FIX: Dynamically retrieve package name
+            val packageName = context.packageName
 
+            Log.d("BatteryOptimizationHelper", "Opening battery optimization settings for " + packageName)
+
+            // First, try opening the specific battery optimization settings
             val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-            intent.data = Uri.parse("package:$packageName") // ✅ FIX: Use correct package name
+            intent.data = Uri.parse("package:" + packageName)
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(intent)
+
+            if (intent.resolveActivity(context.packageManager) != null) {
+                context.startActivity(intent)
+                Log.d("BatteryOptimizationHelper", "Battery optimization settings opened!")
+            } else {
+                // If direct setting fails, open general battery settings instead
+                Log.e("BatteryOptimizationHelper", "Could not resolve activity for battery optimization settings! Trying general battery settings...")
+                val generalIntent = Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS)
+                generalIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+                if (generalIntent.resolveActivity(context.packageManager) != null) {
+                    context.startActivity(generalIntent)
+                    Log.d("BatteryOptimizationHelper", "General battery settings opened!")
+                } else {
+                    Log.e("BatteryOptimizationHelper", "Could not resolve activity for general battery settings!")
+                }
+            }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("BatteryOptimizationHelper", "Error opening battery settings: " + e.message, e)
         }
+    }
+}
+
+class BatteryOptimizationPackage : ReactPackage {
+    override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
+        return listOf(BatteryOptimizationHelper(reactContext))
+    }
+
+    override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> {
+        return emptyList()
     }
 }
 `;
 
 const createBatteryOptimizationHelper = async () => {
   try {
-    const helperCode = isKotlin ? kotlinHelperCode : javaHelperCode;
     await fs.ensureFile(helperPath);
-    await fs.writeFile(helperPath, helperCode, "utf8");
-    console.log(
-      `✅ BatteryOptimizationHelper.${isKotlin ? "kt" : "java"} created`
-    );
+    await fs.writeFile(helperPath, kotlinHelperCode, "utf8");
+    console.log("✅ BatteryOptimizationHelper.kt created");
   } catch (error) {
-    console.error(
-      `❌ Error creating BatteryOptimizationHelper.${
-        isKotlin ? "kt" : "java"
-      }:`,
-      error
-    );
+    console.error("❌ Error creating BatteryOptimizationHelper.kt:", error);
   }
 };
 
-// 🟢 3. Modify `MainApplication` to register the new module
+// 🟢 3. Modify `MainApplication.kt` to register the module correctly
 const modifyMainApplication = async () => {
   try {
     let mainApplication = await fs.readFile(mainApplicationPath, "utf8");
-    const importStatement = `import com.digitalnomad91.codebuilderadmin.BatteryOptimizationHelper`;
+    const importStatement = `import ${packageName}.BatteryOptimizationPackage`;
 
     if (!mainApplication.includes(importStatement)) {
       mainApplication = mainApplication.replace(
@@ -165,36 +141,30 @@ const modifyMainApplication = async () => {
       );
     }
 
-    if (isKotlin) {
-      const registerModule =
-        "BatteryOptimizationHelper(reactNativeHost.reactInstanceManager.currentReactContext!!),";
+    // ✅ Detect Expo’s New Architecture
+    const isNewArch = mainApplication.includes("DefaultReactNativeHost");
+
+    if (isNewArch) {
+      console.log(
+        "🔍 Detected Expo New Architecture. Adjusting `MainApplication.kt`..."
+      );
+
+      const registerModule = "BatteryOptimizationPackage()";
+
       if (!mainApplication.includes(registerModule)) {
         mainApplication = mainApplication.replace(
-          "packages = mutableListOf(",
-          `packages = mutableListOf(\n        ${registerModule}`
-        );
-      }
-    } else {
-      const registerModule = "new BatteryOptimizationHelper(),";
-      if (!mainApplication.includes(registerModule)) {
-        mainApplication = mainApplication.replace(
-          "new MainReactPackage(),",
-          `new MainReactPackage(),\n        ${registerModule}`
+          /val packages = PackageList\(this\)\.packages/,
+          `val packages = PackageList(this).packages.toMutableList()\n            packages.add(${registerModule})`
         );
       }
     }
 
     await fs.writeFile(mainApplicationPath, mainApplication, "utf8");
     console.log(
-      `✅ BatteryOptimizationHelper registered in MainApplication.${
-        isKotlin ? "kt" : "java"
-      }`
+      "✅ BatteryOptimizationPackage registered in MainApplication.kt"
     );
   } catch (error) {
-    console.error(
-      `❌ Error updating MainApplication.${isKotlin ? "kt" : "java"}:`,
-      error
-    );
+    console.error("❌ Error updating MainApplication.kt:", error);
   }
 };
 
