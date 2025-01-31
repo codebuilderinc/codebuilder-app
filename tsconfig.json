@@ -23,8 +23,11 @@
   ],
   "exclude": [
     "node_modules",
-    "babel.config.js",
+    "babel.config.cjs",
     "metro.config.js"
+  ],
+  "types": [
+    "@types/expo__camera"
   ],
   "extends": "expo/tsconfig.base"
 }
