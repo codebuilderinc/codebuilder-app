@@ -45,7 +45,7 @@ export const useLocation = () => {
         if (geoAddress) {
           await saveLocation(currentLocation, geoAddress);
         } else {
-          console.warn("Reverse geocode returned null; skipping API call.");
+          console.log("Reverse geocode returned null; skipping API call.");
         }
       } else {
         setError("Failed to fetch location.");
