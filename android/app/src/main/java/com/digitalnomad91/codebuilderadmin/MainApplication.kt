@@ -2,11 +2,11 @@ package com.digitalnomad91.codebuilderadmin
 
 import android.app.Application
 import android.content.res.Configuration
-
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactNativeHost
 import com.facebook.react.ReactPackage
+import com.digitalnomad91.codebuilderadmin.BatteryOptimizationPackage // ✅ Register as a package
 import com.facebook.react.ReactHost
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.load
 import com.facebook.react.defaults.DefaultReactNativeHost
@@ -22,9 +22,8 @@ class MainApplication : Application(), ReactApplication {
         this,
         object : DefaultReactNativeHost(this) {
           override fun getPackages(): List<ReactPackage> {
-            val packages = PackageList(this).packages
-            // Packages that cannot be autolinked yet can be added manually here, for example:
-            // packages.add(new MyReactNativePackage());
+            val packages = PackageList(this).packages.toMutableList() // ✅ Convert to mutable list
+            packages.add(BatteryOptimizationPackage()) // ✅ Properly register module
             return packages
           }
 
@@ -44,8 +43,7 @@ class MainApplication : Application(), ReactApplication {
     super.onCreate()
     SoLoader.init(this, OpenSourceMergedSoMapping)
     if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
-      // If you opted-in for the New Architecture, we load the native entry point for this app.
-      load()
+      load() // ✅ Ensure the new architecture is loaded properly
     }
     ApplicationLifecycleDispatcher.onApplicationCreate(this)
   }
