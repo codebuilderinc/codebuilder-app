@@ -1,4 +1,7 @@
 import * as Battery from "expo-battery";
+import { Platform, Alert } from "react-native";
+import { NativeModules } from "react-native";
+const { BatteryOptimizationHelper } = NativeModules;
 
 export const getBatteryLevel = async (): Promise<number> => {
   const batteryLevel = await Battery.getBatteryLevelAsync();
@@ -53,4 +56,18 @@ export const removeBatteryListener = (
   subscription: Battery.Subscription
 ): void => {
   subscription.remove();
+};
+
+/**
+ * Opens the Battery Optimization settings screen
+ * where the user can disable battery restrictions for the app.
+ */
+export const openBatteryOptimizationSettings = () => {
+  if (Platform.OS === "android" && BatteryOptimizationHelper) {
+    BatteryOptimizationHelper.autoHighlightApp();
+  } else {
+    console.warn(
+      "Battery optimization settings are only available on Android."
+    );
+  }
 };
