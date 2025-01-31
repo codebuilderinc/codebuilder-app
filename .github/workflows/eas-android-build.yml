@@ -182,29 +182,27 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Full commit history
+          fetch-depth: 0
 
       - name: Generate Changelog
         id: changelog
         run: |
           echo "Generating changelog..."
-
-          # Preserved your original git fetch with safety
-          git fetch --prune || true
-
           CHANGELOG=$(git log --pretty=format:"- %s (%h) by %an" -n 10)
+          echo "Raw changelog content:"
+          echo "$CHANGELOG"
+
+          # Properly escape content and format for GitHub output
+          CHANGELOG_ESCAPED=$(echo "$CHANGELOG" | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')
+
+          # Create multiline output using delimiter
+          delimiter=$(openssl rand -hex 8)
+          echo "CHANGELOG<<${delimiter}" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "${delimiter}" >> $GITHUB_OUTPUT
+
+          # Create file version
           echo "$CHANGELOG" > changelog.txt
-
-          echo "Changelog content:"
-          cat changelog.txt
-
-          # Critical fix for output formatting
-          CHANGELOG_ESCAPED=$(echo "$CHANGELOG" | sed 's/"/\\"/g' | tr -d '\r')
-
-          echo "CHANGELOG=$CHANGELOG_ESCAPED" >> $GITHUB_OUTPUT
-          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
-          echo "$CHANGELOG_ESCAPED" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
 
       - name: Upload Changelog as artifact
         uses: actions/upload-artifact@v4
