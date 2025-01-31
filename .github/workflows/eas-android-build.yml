@@ -64,7 +64,7 @@ jobs:
     outputs:
       apk_path: ${{ steps.download.outputs.APK_PATH }}
     steps:
-      - name: Checkout repository # Fix added here
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -78,7 +78,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y jq curl
 
-      - name: Verify Project Files # Added verification step
+      - name: Install Project Dependencies (Including dotenv)
+        run: npm ci
+
+      - name: Verify Project Files
         run: |
           echo "Current directory contents:"
           ls -la
@@ -91,9 +94,6 @@ jobs:
           BUILD_ID=${{ needs.build-android.outputs.build_id }}
           echo "Starting build monitoring for BUILD_ID: $BUILD_ID"
 
-          # Initial check without JSON for better error visibility
-          npx eas build:view $BUILD_ID || true
-
           RETRY_COUNT=0
           MAX_RETRIES=120
           SLEEP_TIME=30
@@ -101,11 +101,10 @@ jobs:
           while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
             echo -e "\n=== Attempt $((RETRY_COUNT+1))/$MAX_RETRIES ==="
             
-            BUILD_STATUS_JSON=$(npx eas build:view --json $BUILD_ID)
+            BUILD_STATUS_JSON=$(npx eas build:view --build-id $BUILD_ID --json 2>/dev/null)
             echo "Raw API response: $BUILD_STATUS_JSON"
 
-            # Validate JSON and check for empty response
-            if ! echo "$BUILD_STATUS_JSON" | jq empty >/dev/null 2>&1 || [[ -z "$BUILD_STATUS_JSON" ]]; then
+            if [[ -z "$BUILD_STATUS_JSON" || "$BUILD_STATUS_JSON" == "null" ]]; then
               echo "Error: Invalid or empty response from EAS API! Retrying..."
               RETRY_COUNT=$((RETRY_COUNT+1))
               sleep $SLEEP_TIME
@@ -129,15 +128,15 @@ jobs:
                 exit 0
                 ;;
 
-            "errored"|"canceled")
-              if [[ "$BUILD_STATUS" == "canceled" ]]; then
-                echo "Build was canceled! Details:"
-              else
-                echo "Build failed! Error details:"
-              fi
-              echo "$BUILD_STATUS_JSON" | jq .
-              exit 1
-              ;;
+              "errored"|"canceled")
+                if [[ "$BUILD_STATUS" == "canceled" ]]; then
+                  echo "Build was canceled! Details:"
+                else
+                  echo "Build failed! Error details:"
+                fi
+                echo "$BUILD_STATUS_JSON" | jq .
+                exit 1
+                ;;
 
               "new"|"in_queue"|"in_progress"|"pending")
                 echo "Build is still in progress..."
