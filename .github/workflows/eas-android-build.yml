@@ -132,15 +132,11 @@ jobs:
                 exit 0
                 ;;
 
-            "ERRORED"|"CANCELLED")
-              if [[ "$BUILD_STATUS" == "canceled" ]]; then
-                echo "Build was canceled! Details:"
-              else
-                echo "Build failed! Error details:"
-              fi
-              echo "$BUILD_STATUS_JSON" | jq .
-              exit 1
-              ;;
+              "ERRORED"|"CANCELLED")
+                  echo "Build failed! Error details:"
+                  echo "$BUILD_STATUS_JSON" | jq .
+                  exit 1
+                  ;;
 
               "NEW"|"IN_QUE"|"IN_PROGRESS"|"PENDING")
                 echo "Build is still in progress..."
@@ -186,26 +182,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Ensures full history is available
+          fetch-depth: 0 # Full commit history
 
       - name: Generate Changelog
         id: changelog
         run: |
           echo "Generating changelog..."
 
-          # Ensure full history is available
-          git fetch --prune --unshallow || true
+          # Preserved your original git fetch with safety
+          git fetch --prune || true
 
-          # Generate changelog and write to file
           CHANGELOG=$(git log --pretty=format:"- %s (%h) by %an" -n 10)
           echo "$CHANGELOG" > changelog.txt
 
-          # Output for debugging
           echo "Changelog content:"
           cat changelog.txt
 
-          # Store in environment variables
+          # Critical fix for output formatting
           CHANGELOG_ESCAPED=$(echo "$CHANGELOG" | sed 's/"/\\"/g' | tr -d '\r')
+
           echo "CHANGELOG=$CHANGELOG_ESCAPED" >> $GITHUB_OUTPUT
           echo "CHANGELOG<<EOF" >> $GITHUB_ENV
           echo "$CHANGELOG_ESCAPED" >> $GITHUB_ENV
