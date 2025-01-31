@@ -3,11 +3,11 @@ import {
   handleForegroundNotification,
   handleBackgroundNotifications,
   registerForPushNotificationsAsync,
-} from "../utils/notifications";
+} from "../utils/notifications.utils";
 //import messaging from "@react-native-firebase/messaging";
 import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
-import { getFirebaseApp } from "@/utils/firebase";
+import { getFirebaseApp } from "@/utils/firebase.utils";
 
 let globalFcmToken: string | null = null;
 export const usePushNotifications = () => {
