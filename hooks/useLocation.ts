@@ -5,7 +5,7 @@ import {
   getCurrentLocation,
   reverseGeocode,
   saveLocation,
-} from "../utils/location";
+} from "../utils/location.utils";
 
 export const useLocation = () => {
   const [location, setLocation] =
