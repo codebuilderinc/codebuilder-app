@@ -81,6 +81,7 @@ jobs:
         run: |
           BUILD_ID=${{ needs.build-android.outputs.build_id }}
           echo "Starting build monitoring for BUILD_ID: $BUILD_ID"
+          npx eas build:view --json $BUILD_ID
 
           RETRY_COUNT=0
           MAX_RETRIES=120  # 120 attempts * 30 seconds = 60 minutes
