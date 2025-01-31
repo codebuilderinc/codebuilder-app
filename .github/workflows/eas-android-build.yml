@@ -64,7 +64,7 @@ jobs:
     outputs:
       apk_path: ${{ steps.download.outputs.APK_PATH }}
     steps:
-      - name: Checkout repository # Fix added here
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -81,7 +81,7 @@ jobs:
       - name: Install Project Dependencies (Including dotenv)
         run: npm ci
 
-      - name: Verify Project Files # Added verification step
+      - name: Verify Project Files
         run: |
           echo "Current directory contents:"
           ls -la
@@ -196,26 +196,20 @@ jobs:
           # Ensure full history is available
           git fetch --prune --unshallow || true
 
-          # Generate changelog from the last 10 commits
-          CHANGELOG=$(git log --pretty=format:"- %s (%h) by %an" -n 10 | sed 's/"/\\"/g' | tr -d '\r')
+          # Generate changelog and write to file
+          CHANGELOG=$(git log --pretty=format:"- %s (%h) by %an" -n 10)
+          echo "$CHANGELOG" > changelog.txt
 
-          # Output the changelog for debugging
-          echo "Changelog:"
-          echo "$CHANGELOG"
+          # Output for debugging
+          echo "Changelog content:"
+          cat changelog.txt
 
-          # Store changelog in environment variable safely
-          {
-            echo 'CHANGELOG<<EOF'
-            echo "$CHANGELOG"
-            echo 'EOF'
-          } >> "$GITHUB_ENV"
-
-          # Store changelog in GITHUB_OUTPUT so it can be used in later steps
-          {
-            echo 'CHANGELOG<<EOF'
-            echo "$CHANGELOG"
-            echo 'EOF'
-          } >> "$GITHUB_OUTPUT"
+          # Store in environment variables
+          CHANGELOG_ESCAPED=$(echo "$CHANGELOG" | sed 's/"/\\"/g' | tr -d '\r')
+          echo "CHANGELOG=$CHANGELOG_ESCAPED" >> $GITHUB_OUTPUT
+          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+          echo "$CHANGELOG_ESCAPED" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
       - name: Upload Changelog as artifact
         uses: actions/upload-artifact@v4
