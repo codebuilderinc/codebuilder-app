@@ -1,6 +1,6 @@
 # CodeBuilder Admin
 
-[![EAS Android Build & Release](https://github.com/codebuilderinc/codebuilder-app/actions/workflows/eas-android-build.yml/badge.svg?branch=main)](https://github.com/codebuilderinc/codebuilder-app/actions/workflows/eas-android-build.yml)
+[![Build Android APK & Release](https://github.com/codebuilderinc/codebuilder-app/actions/workflows/eas-android-build.yml/badge.svg?branch=main)](https://github.com/codebuilderinc/codebuilder-app/actions/workflows/eas-android-build.yml)
 
 CodeBuilder Admin is a mobile application built with React Native and Expo. This project is designed to manage and administer various functionalities of the CodeBuilder platform.
 
