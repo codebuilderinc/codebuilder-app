@@ -17,6 +17,8 @@ export const registerForPushNotificationsAsync = async () => {
       await Notifications.setNotificationChannelAsync("default", {
         name: "default",
         importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250], // Optional: Add vibration
+        sound: "default", // Enable sound
       });
     }
 
@@ -65,21 +67,50 @@ export const handleNotification = async (
   });
 };
 
+// Handle foreground notifications
 export const handleForegroundNotification = () => {
-  return messaging().onMessage(async (remoteMessage) => {
-    await handleNotification(remoteMessage);
+  const unsubscribe = messaging().onMessage(async (remoteMessage) => {
+    console.log("Foreground message received:", remoteMessage);
+
+    // (Optional) Show an in-app alert:
+    // Alert.alert(
+    //   "New notification",
+    //   JSON.stringify(remoteMessage.notification)
+    // );
+
+    // Show a *local* system notification so the user sees a banner or heads-up:
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: remoteMessage.notification?.title ?? "New Notification",
+        body: remoteMessage.notification?.body ?? "You received a new message",
+        // You can include other fields like sound, badge, data, etc.
+      },
+      trigger: null, // null = show now (immediately)
+    });
   });
+  return unsubscribe;
 };
 
+// DEPRACATED
+// export const handleForegroundNotification = () => {
+//   return messaging().onMessage(async (remoteMessage) => {
+//     await handleNotification(remoteMessage);
+//   });
+// };
+
+// Handle background & quit-state notifications
 export const handleBackgroundNotifications = () => {
+  // Handle background notifications handler.
   messaging().setBackgroundMessageHandler(async (remoteMessage) => {
     console.log("Background message received:", remoteMessage);
   });
 
+  // Handle notification opened when app is in background
   messaging().onNotificationOpenedApp((remoteMessage) => {
     console.log("Notification opened from background:", remoteMessage);
   });
 
+  // Handle notification opened when app is in quit state
   messaging()
     .getInitialNotification()
     .then((remoteMessage) => {
@@ -396,12 +427,3 @@ export async function triggerLocalSampleNotification() {
 //     };
 //   }, []);
 // }
-
-// // Set a global notification handler
-// Notifications.setNotificationHandler({
-//   handleNotification: async () => ({
-//     shouldShowAlert: true,
-//     shouldPlaySound: true,
-//     shouldSetBadge: false,
-//   }),
-// });
