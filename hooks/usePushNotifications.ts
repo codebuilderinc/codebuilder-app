@@ -53,6 +53,15 @@ export const usePushNotifications = () => {
     handleBackgroundNotifications();
     const unsubscribe = handleForegroundNotification();
 
+    // Set a global notification handler
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+
     return () => {
       unsubscribe();
     };
