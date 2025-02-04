@@ -6,24 +6,25 @@ const BACKGROUND_FETCH_TASK = "background-fetch-task";
 // Define the task
 TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
   try {
+    console.log("Background fetch task started");
     // Perform your API request
-    const response = await fetch("https://api.example.com/data");
+    const response = await fetch("https://new.codebuilder.org/api/posts");
     const data = await response.json();
 
     // Handle the fetched data
     console.log("Fetched data:", data);
 
-    return BackgroundFetch.Result.NewData; // Task succeeded
+    return BackgroundFetch.BackgroundFetchResult.NewData; // Task succeeded
   } catch (error) {
     console.error("Background fetch failed:", error);
-    return BackgroundFetch.Result.Failed; // Task failed
+    return BackgroundFetch.BackgroundFetchResult.Failed; // Task failed
   }
 });
 
 // Register the task
-async function registerBackgroundFetch() {
+export async function registerBackgroundFetch() {
   const status = await BackgroundFetch.getStatusAsync();
-  if (status === BackgroundFetch.Status.Available) {
+  if (status === BackgroundFetch.BackgroundFetchStatus.Available) {
     await BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
       minimumInterval: 60, // Fetch interval in seconds (not guaranteed to be exact)
       stopOnTerminate: false, // Continue task when app is closed
@@ -34,5 +35,3 @@ async function registerBackgroundFetch() {
     console.error("Background fetch is not available");
   }
 }
-
-registerBackgroundFetch();
