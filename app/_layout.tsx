@@ -17,6 +17,7 @@ import {
 import { Stack } from "expo-router";
 import "react-native-reanimated";
 import { useColorScheme } from "@/components/useColorScheme";
+import { registerBackgroundFetch } from "@/utils/tasks.utils";
 
 export default function RootLayout() {
   const navigationRef = useNavigationContainerRef();
@@ -25,6 +26,11 @@ export default function RootLayout() {
   // Enable push notifications and observe notification responses
   usePushNotifications();
   useNotificationObserver();
+
+  useEffect(() => {
+    // Register background fetch task
+    registerBackgroundFetch();
+  }, []);
 
   // Enable React Navigation DevTools for debugging
   useReactNavigationDevTools(navigationRef);
