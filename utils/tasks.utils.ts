@@ -8,7 +8,9 @@ TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
   try {
     console.log("Background fetch task started");
     // Perform your API request
-    const response = await fetch("https://new.codebuilder.org/api/posts");
+    const response = await fetch(
+      "https://new.codebuilder.org/api/reddit/posts"
+    );
     const data = await response.json();
 
     // Handle the fetched data
