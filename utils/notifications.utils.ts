@@ -122,15 +122,18 @@ export const handleBackgroundNotifications = () => {
 
 export const savePushToken = async (token: string): Promise<void> => {
   try {
-    const response = await fetch("https://new.codebuilder.org/api/subscribe", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        endpoint: "https://fcm.googleapis.com/fcm/send",
-        keys: { token },
-        type: "fcm",
-      }),
-    });
+    const response = await fetch(
+      "https://new.codebuilder.org/api/notifications/subscribe",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          endpoint: "https://fcm.googleapis.com/fcm/send",
+          keys: { token },
+          type: "fcm",
+        }),
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`Error saving token: ${response.statusText}`);
