@@ -45,7 +45,7 @@ jobs:
       # ========================
       - name: "🔄 Update Production Version"
         if: github.ref == 'refs/heads/main'
-        run: node scripts/bumpVersion.js
+        run: node scripts/bumpVersion.cjs
 
       - name: "🔧 Configure Git for Automation"
         if: github.ref == 'refs/heads/main'
