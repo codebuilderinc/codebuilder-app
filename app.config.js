@@ -1,6 +1,6 @@
-//const dotenv = require("dotenv");
 import dotenv from "dotenv";
 import withNotificationToolsReplace from "./plugins/test.cjs";
+import versionData from "./version.json"; // Import version info
 
 // Explicitly load the .env file
 dotenv.config();
@@ -9,7 +9,7 @@ module.exports = {
   expo: {
     name: "CodeBuilder Admin",
     slug: "codebuilder",
-    version: process.env.APP_VERSION || "1.0.0",
+    version: versionData.version, // Using version from version.json
     extra: {
       buildDate: process.env.BUILD_DATE || new Date().toISOString(),
       eas: {
@@ -37,7 +37,7 @@ module.exports = {
       backgroundColor: "#ffffff",
     },
     ios: {
-      buildNumber: process.env.BUILD_NUMBER || "1",
+      buildNumber: versionData.iosBuildNumber, // Using iOS build number from version.json
       supportsTablet: true,
       bundleIdentifier: "com.digitalnomad91.codebuilderadmin",
       googleServicesFile: "./GoogleService-Info.plist",
@@ -50,7 +50,7 @@ module.exports = {
       },
     },
     android: {
-      versionCode: parseInt(process.env.BUILD_NUMBER || "1", 10),
+      versionCode: versionData.androidVersionCode, // Using Android versionCode from version.json
       adaptiveIcon: {
         foregroundImage: "./assets/images/adaptive-icon.png",
         backgroundColor: "#ffffff",
@@ -72,8 +72,7 @@ module.exports = {
       //   application: {
       //     metaData: [
       //       {
-      //         "android:name":
-      //           "com.google.firebase.messaging.default_notification_color",
+      //         "android:name": "com.google.firebase.messaging.default_notification_color",
       //         "android:resource": "@color/notification_icon_color",
       //         "tools:replace": "android:resource",
       //       },
