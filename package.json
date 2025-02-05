@@ -7,7 +7,7 @@
     "start": "expo start",
     "prebuild": "node scripts/setupBatteryOptimization.js",
     "android": "npm run prebuild && expo run:android",
-    "bump-version": "node scripts/bumpVersion.js",
+    "bump-version": "node scripts/bumpVersion.cjs",
     "eas-build-preinstall": "node scripts/setupBatteryOptimization.js",
     "ios": "expo run:ios",
     "web": "expo start --web",
