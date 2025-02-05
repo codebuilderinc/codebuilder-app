@@ -27,7 +27,7 @@ export default function PaginatedPostsCards() {
       setError(null);
 
       const response = await fetch(
-        `https://new.codebuilder.org/api/posts?page=${page}&pageSize=${pageSize}`
+        `https://new.codebuilder.org/api/reddit/posts?page=${page}&pageSize=${pageSize}`
       );
       if (!response.ok) {
         throw new Error(`Error: ${response.statusText}`);
