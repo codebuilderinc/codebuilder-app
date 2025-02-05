@@ -144,7 +144,73 @@ jobs:
       - name: "⏳ Wait for Build Completion"
         run: |
           echo "⏰ Monitoring build status..."
-          npx eas build:wait --build-id ${{ needs.build-android.outputs.build_id }} --timeout 1800
+          cd $GITHUB_WORKSPACE
+          BUILD_ID=${{ needs.build-android.outputs.build_id }}
+          echo "🔍 Starting build monitoring for BUILD_ID: $BUILD_ID"
+
+          # Initial check without JSON for better error visibility
+          npx eas build:view $BUILD_ID || true
+
+          RETRY_COUNT=0
+          MAX_RETRIES=120
+          SLEEP_TIME=30
+
+          while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
+            echo -e "\n=== Attempt $((RETRY_COUNT+1))/$MAX_RETRIES ==="
+            
+            # Fetch build status in JSON format
+            BUILD_STATUS_JSON=$(npx eas build:view --json $BUILD_ID)
+            echo "📄 Raw API response: $BUILD_STATUS_JSON"
+
+            # Validate JSON and check for empty response
+            if ! echo "$BUILD_STATUS_JSON" | jq empty >/dev/null 2>&1 || [[ -z "$BUILD_STATUS_JSON" ]]; then
+              echo "❌ Error: Invalid or empty response from EAS API! Retrying..."
+              RETRY_COUNT=$((RETRY_COUNT+1))
+              sleep $SLEEP_TIME
+              continue
+            fi
+
+            BUILD_STATUS=$(echo "$BUILD_STATUS_JSON" | jq -r '.status')
+            ERROR_MESSAGE=$(echo "$BUILD_STATUS_JSON" | jq -r '.error.message // empty')
+
+            echo "🔍 Parsed status: $BUILD_STATUS"
+            [[ -n "$ERROR_MESSAGE" ]] && echo "❌ Error message: $ERROR_MESSAGE"
+
+            case $BUILD_STATUS in
+              "FINISHED")
+                APK_URL=$(echo "$BUILD_STATUS_JSON" | jq -r '.artifacts.buildUrl')
+                if [[ -z "$APK_URL" || "$APK_URL" == "null" ]]; then
+                  echo "❌ Error: Successful build but no APK URL found!"
+                  exit 1
+                fi
+                echo "✅ APK_URL=$APK_URL" >> $GITHUB_ENV
+                exit 0
+                ;;
+
+              "ERRORED"|"CANCELLED")
+                  echo "❌ Build failed! Error details:"
+                  echo "$BUILD_STATUS_JSON" | jq .
+                  exit 1
+                  ;;
+
+              "NEW"|"IN_QUE"|"IN_PROGRESS"|"PENDING")
+                echo "⏳ Build is still in progress..."
+                ;;
+
+              *)
+                echo "❌ Unknown build status: $BUILD_STATUS"
+                exit 1
+                ;;
+            esac
+
+            RETRY_COUNT=$((RETRY_COUNT+1))
+            sleep $SLEEP_TIME
+          done
+
+          echo "❌ Error: Build did not complete within the expected time!"
+          exit 1
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       # ========================
       # 📦 Artifact Handling
