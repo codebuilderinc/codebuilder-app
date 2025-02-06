@@ -136,7 +136,7 @@ jobs:
       - name: "🧰 Install Build Tools"
         run: |
           npm install -g eas-cli@latest
-          sudo apt-get install -y jq curl
+          sudo apt-get install -y jq curl env
 
       # ========================
       # 🔍 Build Monitoring
