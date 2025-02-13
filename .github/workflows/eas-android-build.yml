@@ -108,9 +108,17 @@ jobs:
           echo "🔄 Initializing build process..."
           sudo apt-get install -y jq
           BUILD_JSON=$(npx eas build -p android --profile production --non-interactive --json)
+          echo "Raw build output: $BUILD_JSON"
           BUILD_ID=$(echo "$BUILD_JSON" | jq -r '.[0].id')
+          if [[ -z "$BUILD_ID" || "$BUILD_ID" == "null" ]]; then
+            echo "Error: Failed to retrieve BUILD_ID!"
+            exit 1
+          fi
+          echo "EAS Build started with ID: $BUILD_ID"
           echo "BUILD_ID=$BUILD_ID" >> $GITHUB_ENV
           echo "BUILD_ID=$BUILD_ID" >> $GITHUB_OUTPUT
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
   download-apk:
     name: "📥 APK Artifact Handler"
@@ -139,6 +147,7 @@ jobs:
       - name: "🧰 Install Build Tools"
         run: |
           npm install -g eas-cli@latest
+          sudo apt-get update
           sudo apt-get install -y jq curl dotenv
 
       # ========================
@@ -191,10 +200,10 @@ jobs:
                 ;;
 
               "ERRORED"|"CANCELLED")
-                  echo "❌ Build failed! Error details:"
-                  echo "$BUILD_STATUS_JSON" | jq .
-                  exit 1
-                  ;;
+                echo "❌ Build failed! Error details:"
+                echo "$BUILD_STATUS_JSON" | jq .
+                exit 1
+                ;;
 
               "NEW"|"IN_QUE"|"IN_PROGRESS"|"PENDING")
                 echo "⏳ Build is still in progress..."
@@ -222,7 +231,12 @@ jobs:
         id: download
         run: |
           echo "🔽 Retrieving APK URL..."
-          APK_URL=$(npx eas build:list --build-id ${{ needs.build-android.outputs.build_id }} --json | jq -r '.[0].artifacts.url')
+          # Use the build:view command to get a clean JSON response
+          APK_URL=$(npx eas build:view --json ${{ needs.build-android.outputs.build_id }} | jq -r '.artifacts.buildUrl')
+          if [[ -z "$APK_URL" || "$APK_URL" == "null" ]]; then
+            echo "❌ Error: No APK URL found!"
+            exit 1
+          fi
           echo "📥 Downloading APK from $APK_URL..."
           curl -L "$APK_URL" -o app-release.apk
           echo "APK_PATH=app-release.apk" >> $GITHUB_OUTPUT
