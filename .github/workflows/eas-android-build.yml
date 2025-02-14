@@ -271,7 +271,12 @@ jobs:
           echo "📝 Generating changelog from git history..."
           CHANGELOG=$(git log --pretty=format:"- %s (%h) by %an" -n 15)
           echo "$CHANGELOG" > changelog.txt
-          echo "CHANGELOG=$(cat changelog.txt)" >> $GITHUB_OUTPUT
+
+          # FIXED OUTPUT HANDLING (ONLY CHANGE)
+          delimiter=$(openssl rand -hex 6)
+          echo "CHANGELOG<<${delimiter}" >> $GITHUB_OUTPUT
+          cat changelog.txt >> $GITHUB_OUTPUT
+          echo "${delimiter}" >> $GITHUB_OUTPUT
 
       - name: "📤 Upload Changelog"
         uses: actions/upload-artifact@v4
