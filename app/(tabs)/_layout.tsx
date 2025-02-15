@@ -63,6 +63,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <TabBarIcon name="cog" color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="four"
+        options={{
+          title: "Cellular",
+          tabBarIcon: ({ color }) => <TabBarIcon name="phone" color={color} />,
+        }}
+      />
     </Tabs>
   );
 }
