@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { AppState, Platform } from "react-native";
 import { clipboard } from "../utils/clipboard";
 
@@ -6,13 +6,14 @@ export const useClipboard = () => {
   const [clipboardContent, setClipboardContent] = useState<string>("");
   const [hasCopiedText, setHasCopiedText] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
-  const [previousContent, setPreviousContent] = useState<string>("");
+  const previousContentRef = useRef<string>("");
+  const isMounted = useRef(true);
 
   const checkClipboard = async () => {
     try {
       const content = await clipboard.getString();
-      if (content !== previousContent) {
-        setPreviousContent(content);
+      if (content !== previousContentRef.current) {
+        previousContentRef.current = content;
         setClipboardContent(content);
         setHasCopiedText(content.length > 0);
         addToHistory(content);
@@ -24,66 +25,60 @@ export const useClipboard = () => {
 
   const addToHistory = (content: string) => {
     if (content.trim() && content !== history[0]) {
-      setHistory((prev) => [content, ...prev.slice(0, 49)]); // Keep last 50 items
+      setHistory((prev) => [content, ...prev.slice(0, 49)]);
     }
   };
 
-  //   useEffect(() => {
-  //     const initialLoad = async () => {
-  //       const content = await clipboard.getString();
-  //       setClipboardContent(content);
-  //       setHasCopiedText(content.length > 0);
-  //       addToHistory(content);
-  //     };
-  //     initialLoad();
-
-  //     const subscription = clipboard.addListener((content) => {
-  //       setClipboardContent(content);
-  //       setHasCopiedText(content.length > 0);
-  //       addToHistory(content);
-  //     });
-
-  //     return () => {
-  //       clipboard.removeListener(subscription);
-  //     };
-  //   }, []);
-
   useEffect(() => {
-    let intervalId: NodeJS.Timeout;
-    const subscription = AppState.addEventListener("change", (nextAppState) => {
-      if (nextAppState === "active") {
+    isMounted.current = true;
+
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === "active" && isMounted.current) {
         checkClipboard();
       }
-    });
+    };
+
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange
+    );
 
     // Initial check
     checkClipboard();
 
+    let intervalId: NodeJS.Timeout | null = null;
+    let listener: any;
     if (Platform.OS === "ios") {
-      // Poll clipboard every 1.5 seconds for iOS
       intervalId = setInterval(checkClipboard, 1500);
     } else {
-      // Android listener
-      const listenerSubscription = clipboard.addListener((content) => {
-        setClipboardContent(content);
-        setHasCopiedText(content.length > 0);
-        addToHistory(content);
+      listener = clipboard.addListener((content: string) => {
+        if (isMounted.current) {
+          previousContentRef.current = content;
+          setClipboardContent(content);
+          setHasCopiedText(content.length > 0);
+          addToHistory(content);
+        }
       });
-
-      return () => {
-        clipboard.removeListener(listenerSubscription);
-      };
     }
 
     return () => {
-      clearInterval(intervalId);
+      isMounted.current = false;
       subscription.remove();
+      if (intervalId) clearInterval(intervalId);
+      if (Platform.OS === "android") {
+        clipboard.removeListener(listener);
+      }
     };
-  }, [previousContent]);
+  }, []);
 
   const copyToClipboard = async (text: string) => {
     await clipboard.copy(text);
-    addToHistory(text);
+    if (isMounted.current) {
+      previousContentRef.current = text;
+      setClipboardContent(text);
+      setHasCopiedText(true);
+      addToHistory(text);
+    }
   };
 
   const getLatestClipboard = async () => {
@@ -92,8 +87,11 @@ export const useClipboard = () => {
 
   const clearClipboard = async () => {
     await clipboard.clear();
-    setClipboardContent("");
-    setHasCopiedText(false);
+    if (isMounted.current) {
+      previousContentRef.current = "";
+      setClipboardContent("");
+      setHasCopiedText(false);
+    }
   };
 
   return {
