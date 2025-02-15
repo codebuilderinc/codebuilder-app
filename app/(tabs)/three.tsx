@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet } from "react-native";
+import ClipboardDemo from "@/components/ClipboardDemo";
 
 export default function SimplePage() {
   return (
@@ -7,6 +8,7 @@ export default function SimplePage() {
       <Text style={styles.text}>
         This is some example text to show a plain page component.
       </Text>
+      <ClipboardDemo />
     </View>
   );
 }
