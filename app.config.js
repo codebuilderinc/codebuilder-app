@@ -15,7 +15,7 @@ module.exports = {
       eas: {
         projectId: "c382aeb5-b138-47fb-83b4-dc45ab02ce76",
       },
-      firebaseApiKey: process.env.FIREBASE_API_KEY,s
+      firebaseApiKey: process.env.FIREBASE_API_KEY,
       firebaseAuthDomain: process.env.FIREBASE_AUTH_DOMAIN,
       firebaseProjectId: process.env.FIREBASE_PROJECT_ID,
       firebaseStorageBucket: process.env.FIREBASE_STORAGE_BUCKET,
