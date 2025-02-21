@@ -48,7 +48,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="two"
+        name="jobs"
         options={{
           title: "Jobs",
           tabBarIcon: ({ color }) => (
@@ -57,14 +57,14 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="three"
+        name="settings"
         options={{
           title: "Settings",
           tabBarIcon: ({ color }) => <TabBarIcon name="cog" color={color} />,
         }}
       />
       <Tabs.Screen
-        name="four"
+        name="cellular"
         options={{
           title: "Cellular",
           tabBarIcon: ({ color }) => <TabBarIcon name="phone" color={color} />,
