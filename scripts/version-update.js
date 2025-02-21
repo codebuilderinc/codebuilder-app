@@ -1,15 +1,17 @@
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+const path = require("path");
+const fs = require("fs");
+const { fileURLToPath } = require("url");
 
 // Resolve __dirname in ES module
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+//const __filename = fileURLToPath(import.meta.url);
+//const __dirname = path.dirname(__filename);
 
 const appConfigPath = path.join(__dirname, "../app.config.js");
 
 // Import `app.config.js` dynamically
-const { default: appConfig } = await import(appConfigPath);
+const appConfig = require(appConfigPath);
+
+console.log("appConfig", appConfig);
 
 // Split version into major.minor.patch
 const [major, minor, patch] = appConfig.expo.version.split(".").map(Number);
