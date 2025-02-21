@@ -58,7 +58,7 @@ export const usePushNotifications = () => {
       handleNotification: async () => ({
         shouldShowAlert: true,
         shouldPlaySound: true,
-        shouldSetBadge: false,
+        shouldSetBadge: true,
       }),
     });
 
