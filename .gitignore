@@ -44,3 +44,8 @@ yarn-error.*
 
 # You can also ignore any .env files or other secrets
 *.env
+
+# Android / ioS Build Folders
+./android
+./ios
+./web-build
