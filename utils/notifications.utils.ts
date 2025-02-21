@@ -18,7 +18,8 @@ export const registerForPushNotificationsAsync = async () => {
         name: "default",
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250], // Optional: Add vibration
-        sound: "default", // Enable sound
+        sound: "notification", // Enable sound,
+        lightColor: "#FF231F7C",
       });
     }
 
@@ -61,7 +62,17 @@ export const handleNotification = async (
       title:
         remoteMessage.notification?.title ??
         NOTIFICATION_STRINGS.NEW_NOTIFICATION,
+      subtitle: "Test subtitle",
       body: remoteMessage.notification?.body ?? "You received a new message",
+      sound: "notification",
+      badge: 1,
+      vibrate: [0, 250, 250, 250], // Optional: Add vibration
+      priority: Notifications.AndroidNotificationPriority.HIGH,
+      color: "#FF231F7C",
+      interruptionLevel: "critical",
+      autoDismiss: false,
+      sticky: true,
+      categoryIdentifier: "new-message",
     },
     trigger: null,
   });
@@ -82,8 +93,18 @@ export const handleForegroundNotification = () => {
     await Notifications.scheduleNotificationAsync({
       content: {
         title: remoteMessage.notification?.title ?? "New Notification",
+        subtitle: "Test subtitle",
         body: remoteMessage.notification?.body ?? "You received a new message",
-        // You can include other fields like sound, badge, data, etc.
+        data: { extraData: "Some data" },
+        sound: "notification",
+        badge: 1,
+        vibrate: [0, 250, 250, 250], // Optional: Add vibration
+        priority: Notifications.AndroidNotificationPriority.HIGH,
+        color: "#FF231F7C",
+        interruptionLevel: "critical",
+        autoDismiss: false,
+        sticky: true,
+        categoryIdentifier: "new-message",
       },
       trigger: null, // null = show now (immediately)
     });
@@ -150,9 +171,18 @@ export async function triggerLocalSampleNotification() {
   await Notifications.scheduleNotificationAsync({
     content: {
       title: "Job Notification",
+      subtitle: "Test subtitle",
       body: "This is a test notification.",
-      sound: true,
+      sound: "notification",
       data: { extraData: "Some data" },
+      badge: 1,
+      vibrate: [0, 250, 250, 250], // Optional: Add vibration
+      priority: Notifications.AndroidNotificationPriority.HIGH,
+      color: "#FF231F7C",
+      interruptionLevel: "critical",
+      autoDismiss: false,
+      sticky: true,
+      categoryIdentifier: "new-message",
     },
     trigger: null, // Send immediately
   });
