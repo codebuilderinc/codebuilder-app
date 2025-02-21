@@ -45,7 +45,7 @@ jobs:
       # ========================
       - name: "🔄 Update Production Version"
         if: github.ref == 'refs/heads/main'
-        run: node scripts/bumpVersion.cjs
+        run: node scripts/bumpVersion.js
 
       - name: "🔧 Configure Git for Automation"
         if: github.ref == 'refs/heads/main'
@@ -311,19 +311,19 @@ jobs:
           echo "🔍 Detecting release type..."
           if [ "${{ needs.build-android.outputs.is_production }}" = "true" ]; then
             echo "🟢 Production release detected"
-            echo "RELEASE_TAG=v${{ needs.build-android.outputs.app_version }}" >> $GITHUB_ENV
-            echo "RELEASE_TITLE=Production Release v${{ needs.build-android.outputs.app_version }}" >> $GITHUB_ENV
+            RELEASE_TAG="v${{ needs.build-android.outputs.app_version }}"
+            RELEASE_TITLE="Production Release v${{ needs.build-android.outputs.app_version }}"
           else
             echo "🟡 Nightly build detected"
-            echo "RELEASE_TAG=nightly-${{ needs.build-android.outputs.build_date }}" >> $GITHUB_ENV
-            echo "RELEASE_TITLE=Nightly Build (${{ needs.build-android.outputs.build_date }})" >> $GITHUB_ENV
+            RELEASE_TAG="nightly-${{ needs.build-android.outputs.build_date }}"
+            RELEASE_TITLE="Nightly Build (${{ needs.build-android.outputs.build_date }})"
           fi
-
+          echo "RELEASE_TAG=${RELEASE_TAG}" >> $GITHUB_OUTPUT
       - name: "🎉 Publish GitHub Release"
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.RELEASE_TAG }}
-          name: ${{ env.RELEASE_TITLE }}
+          tag_name: ${{ steps.release-type.outputs.RELEASE_TAG }}
+          name: ${{ steps.release-type.outputs.RELEASE_TITLE }}
           body_path: changelog.txt
           files: app-release.apk
           prerelease: ${{ needs.build-android.outputs.is_production != 'true' }}
