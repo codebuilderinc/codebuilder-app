@@ -7,6 +7,8 @@ const CellularDemo = () => {
   const { cellularInfo, refreshCellularInfo, requestPermissionsAsync } =
     useCeullar();
 
+  const [status, requestPermission] = Cellular.usePermissions();
+
   const handleRequestPermissions = async () => {
     try {
       await requestPermissionsAsync();
@@ -43,6 +45,7 @@ const CellularDemo = () => {
         Permission Status:{" "}
         {cellularInfo.permission ? cellularInfo.permission.status : "N/A"}
       </Text>
+
       <View style={styles.buttonContainer}>
         <Button
           title="Refresh Info"
