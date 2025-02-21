@@ -46,6 +46,6 @@ yarn-error.*
 *.env
 
 # Android / ioS Build Folders
-./android
-./ios
-./web-build
+android/
+ios/
+web-build/
