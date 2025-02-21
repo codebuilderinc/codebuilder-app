@@ -11,6 +11,7 @@ import MapView, { Marker } from "react-native-maps";
 import { useLocation } from "../../hooks/useLocation";
 import LogViewer from "../../components/LogViewer";
 import BatteryInfo from "../../components/BatteryInfo";
+import { triggerLocalSampleNotification } from "../../utils/notifications.utils";
 
 export default function LocationComponent() {
   const { location, address, error, loading, fetchLocation } = useLocation();
@@ -85,6 +86,7 @@ export default function LocationComponent() {
         )}
 
         <Button title="Get Location" onPress={fetchLocation} />
+        <Button title="Get Location" onPress={triggerLocalSampleNotification} />
       </View>
     </ScrollView>
   );
