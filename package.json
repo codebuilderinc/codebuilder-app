@@ -4,10 +4,10 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
-    "prebuild": "node scripts/setupBatteryOptimization.js",
+    "prebuild": "node scripts/setupBatteryOptimization.js && node scripts/notificationSounds.js",
     "android": "npm run prebuild && expo run:android",
     "bump-version": "node scripts/bumpVersion.js",
-    "eas-build-preinstall": "node scripts/setupBatteryOptimization.js",
+    "eas-build-preinstall": "node scripts/setupBatteryOptimization.js && node scripts/notificationSounds.js",
     "ios": "npm run prebuild && expo run:ios",
     "web": "npm run prebuild && expo start --web",
     "test": "jest --watchAll",
