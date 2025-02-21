@@ -1,9 +1,30 @@
 import dotenv from "dotenv";
 import withNotificationToolsReplace from "./plugins/test.cjs";
-import versionData from "./version.json"; // Import version info
+import versionData from "./version.json";
+import { withPlugins } from "@expo/config-plugins";
+import { withXcodeProject } from "expo/config-plugins";
+import fs from "fs";
 
 // Explicitly load the .env file
 dotenv.config();
+
+// Add this new plugin
+const withIOSSounds = (config) => {
+  return withXcodeProject(config, async (cfg) => {
+    const xcodeProject = cfg.modResults;
+    const appName = "CodeBuilder Admin"; // Match your iOS project name
+    const soundFiles = fs.readdirSync(`./ios/${appName}/Sounds`);
+
+    soundFiles.forEach((file) => {
+      xcodeProject.addResourceFile({
+        path: `${appName}/Sounds/${file}`,
+        group: "Resources",
+      });
+    });
+
+    return cfg;
+  });
+};
 
 module.exports = {
   expo: {
@@ -24,7 +45,7 @@ module.exports = {
     },
     orientation: "portrait",
     icon: "./assets/images/icon.png",
-    scheme: "myapp",
+    scheme: "codebuilder-admin",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
     notification: {
@@ -56,7 +77,7 @@ module.exports = {
         backgroundColor: "#ffffff",
       },
       package: "com.digitalnomad91.codebuilderadmin",
-      permissions: ["NOTIFICATIONS", "POST_NOTIFICATIONS"],
+      permissions: ["NOTIFICATIONS", "POST_NOTIFICATIONS", "READ_PHONE_STATE"],
       googleServicesFile: "./google-services.json",
       useNextNotificationsApi: true,
       notification: {
@@ -114,6 +135,12 @@ module.exports = {
       ],
       "@react-native-firebase/app",
       "@react-native-firebase/messaging",
+      // Add the iOS sound plugin
+      [withIOSSounds],
+      "expo-notifications",
+      {
+        sounds: ["./assets/sounds/notification.aiff"],
+      },
     ],
     experiments: {
       typedRoutes: true,
