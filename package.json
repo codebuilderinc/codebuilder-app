@@ -8,9 +8,11 @@
     "android": "npm run prebuild && expo run:android",
     "bump-version": "node scripts/bumpVersion.js",
     "eas-build-preinstall": "node scripts/setupBatteryOptimization.js",
-    "ios": "expo run:ios",
-    "web": "expo start --web",
-    "test": "jest --watchAll"
+    "ios": "npm run prebuild && expo run:ios",
+    "web": "npm run prebuild && expo start --web",
+    "test": "jest --watchAll",
+    "postinstall": "node scripts/notificationSounds.js",
+    "copy-sounds": "node scripts/notificationSounds.js"
   },
   "jest": {
     "preset": "jest-expo"
@@ -34,6 +36,8 @@
     "expo-battery": "~9.0.2",
     "expo-build-properties": "^0.13.1",
     "expo-camera": "~16.0.14",
+    "expo-cellular": "~7.0.2",
+    "expo-clipboard": "~7.0.1",
     "expo-dev-client": "~5.0.8",
     "expo-device": "~7.0.1",
     "expo-font": "~13.0.2",
@@ -63,9 +67,7 @@
     "react-native-screens": "~4.4.0",
     "react-native-svg": "15.8.0",
     "react-native-web": "~0.19.13",
-    "react-native-webview": "13.12.5",
-    "expo-clipboard": "~7.0.1",
-    "expo-cellular": "~7.0.2"
+    "react-native-webview": "13.12.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
