@@ -137,10 +137,12 @@ module.exports = {
       "@react-native-firebase/messaging",
       // Add the iOS sound plugin
       [withIOSSounds],
-      "expo-notifications",
-      {
-        sounds: ["./assets/sounds/notification.aiff"],
-      },
+      [
+        "expo-notifications",
+        {
+          sounds: ["./assets/sounds/notification.aiff"],
+        },
+      ],
     ],
     experiments: {
       typedRoutes: true,
