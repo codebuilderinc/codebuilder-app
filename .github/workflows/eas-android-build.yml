@@ -99,9 +99,9 @@ jobs:
       # 🔐 EAS Setup & Auth
       # ========================
       - name: "🔧 Setup pnpm global bin"
-        run: |
-          export SHELL=/bin/bash
-          pnpm setup
+        env:
+          SHELL: /bin/bash
+        run: pnpm setup
 
       - name: "⚙️ Install EAS CLI"
         run: pnpm add -g eas-cli@latest
