@@ -102,9 +102,7 @@ jobs:
         env:
           SHELL: /bin/bash
         run: |
-          # Create a directory for global binaries
           mkdir -p $HOME/.pnpm-global
-          # Set PNPM_HOME and add it to PATH for subsequent steps
           echo "PNPM_HOME=$HOME/.pnpm-global" >> $GITHUB_ENV
           echo "$HOME/.pnpm-global" >> $GITHUB_PATH
           pnpm setup
@@ -113,7 +111,7 @@ jobs:
         run: pnpm add -g eas-cli@latest
 
       - name: "🔐 Verify Expo Credentials"
-        run: npx eas whoami --token $EXPO_TOKEN
+        run: eas whoami --token $EXPO_TOKEN
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
