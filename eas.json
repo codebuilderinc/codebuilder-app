@@ -28,6 +28,10 @@
       "distribution": "store",
       "autoIncrement": false,
       "android": {
+        "node": "20.2.0",
+        "env": {
+          "EXPO_NO_CACHE": "1"
+        },
         "buildType": "apk",
         "gradleCommand": ":app:assembleRelease"
       },
