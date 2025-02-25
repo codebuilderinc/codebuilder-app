@@ -116,10 +116,13 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       # ========================
-      # Fix missing dependency by ensuring consistent store location
+      # Ensure consistent pnpm store: Force reinstallation of dependencies
       # ========================
       - name: "Set pnpm global store directory"
-        run: pnpm config set store-dir $HOME/.local/share/pnpm --global
+        run: pnpm config set store-dir "$HOME/.local/share/pnpm/store" --global
+
+      - name: "Reinstall dependencies with new store"
+        run: pnpm install --force
 
       - name: "Install @expo/config-plugins"
         run: pnpm add @expo/config-plugins
