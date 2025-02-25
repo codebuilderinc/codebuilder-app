@@ -116,6 +116,12 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       # ========================
+      # Install missing dependency to fix Expo config error
+      # ========================
+      - name: "Install @expo/config-plugins"
+        run: pnpm add @expo/config-plugins
+
+      # ========================
       # Clear npx cache to avoid stale module resolution issues
       # ========================
       - name: "Clear npx cache"
@@ -342,4 +348,12 @@ jobs:
             RELEASE_TAG="nightly-${{ needs.build-android.outputs.build_date }}"
             RELEASE_TITLE="Nightly Build (${{ needs.build-android.outputs.build_date }})"
           fi
-          echo "RELEASE_TAG=${RELEASE_TAG}" >> $GITHUB
+          echo "RELEASE_TAG=${RELEASE_TAG}" >> $GITHUB_OUTPUT
+      - name: "🎉 Publish GitHub Release"
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release-type.outputs.RELEASE_TAG }}
+          name: ${{ steps.release-type.outputs.RELEASE_TITLE }}
+          body_path: changelog.txt
+          files: app-release.apk
+          prerelease: ${{ needs.build-android.outputs.is_production != 'true' }}
