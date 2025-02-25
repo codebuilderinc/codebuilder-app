@@ -1,8 +1,9 @@
-name: ðŸš€ EAS Android Build & Smart Release
+name: ðŸš EAS Android Build & Smart Release
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 env:
@@ -11,7 +12,7 @@ env:
 
 jobs:
   build-android:
-    name: ðŸ”¨ Build Android - Version Manager
+    name: ðŸ” Build Android - Version Manager
     runs-on: ubuntu-latest
     outputs:
       build_id: ${{ steps.build.outputs.BUILD_ID }}
@@ -20,55 +21,46 @@ jobs:
       build_date: ${{ steps.version-control.outputs.build_date }}
       is_production: ${{ steps.version-control.outputs.is_production }}
     steps:
-      # ========================
-      # ðŸ› ï¸ Repository Setup
-      # ========================
-      - name: "ðŸ“¦ Checkout (Full History)"
+      # Repository Setup
+      - name: "ðŸ“ Checkout (Full History)"
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # ========================
-      # âš™ï¸ Environment Configuration
-      # ========================
-      - name: "ðŸ“¦ Setup Node.js 20.x"
+      # Environment Configuration
+      - name: "ðŸ“ Setup Node.js 20.x"
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          # NOTE: Removed cache: "pnpm" to avoid expecting pnpm pre-installed
 
-      - name: "ðŸ”§ Install pnpm"
+      - name: "ðŸ” Install pnpm"
         run: |
           npm install -g pnpm
           pnpm --version
 
-      - name: "ðŸ§© Install dependencies (ci)"
+      - name: "ðŸ§ Install dependencies (ci)"
         run: pnpm install --frozen-lockfile
 
-      # ========================
-      # ðŸ”„ Version Management
-      # ========================
-      - name: "ðŸ”„ Update Production Version"
+      # Version Management
+      - name: "ðŸ” Update Production Version"
         if: github.ref == 'refs/heads/main'
         run: node scripts/bumpVersion.js
 
-      - name: "ðŸ”§ Configure Git for Automation"
+      - name: "ðŸ” Configure Git for Automation"
         if: github.ref == 'refs/heads/main'
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
 
-      - name: "ðŸ’¾ Commit Version Update"
+      - name: "ðŸ’ Commit Version Update"
         if: github.ref == 'refs/heads/main'
         run: |
           git add version.json
           git commit -m "chore: Auto-increment version [skip ci]"
           git push
 
-      # ========================
-      # ðŸ“Œ Version Tagging
-      # ========================
-      - name: "ðŸ·ï¸ Set CI/CD Versions"
+      # Version Tagging
+      - name: "ðŸï¸ Set CI/CD Versions"
         id: version-control
         run: |
           # Use version from version.json (requires jq)
@@ -95,10 +87,8 @@ jobs:
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
           echo "BUILD_DATE=$BUILD_DATE" >> $GITHUB_ENV
 
-      # ========================
-      # ðŸ” EAS Setup & Auth
-      # ========================
-      - name: "ðŸ”§ Setup pnpm global bin"
+      # EAS Setup & Auth
+      - name: "ðŸ” Setup pnpm global bin"
         env:
           SHELL: /bin/bash
         run: |
@@ -110,14 +100,12 @@ jobs:
       - name: "âš™ï¸ Install EAS CLI"
         run: pnpm add -g eas-cli@latest
 
-      - name: "ðŸ” Verify Expo Credentials"
+      - name: "ðŸ” Verify Expo Credentials"
         run: eas whoami --token $EXPO_TOKEN
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
-      # ========================
-      # Ensure consistent pnpm store: Force reinstallation of dependencies
-      # ========================
+      # Force reinstallation of dependencies
       - name: "Set pnpm global store directory"
         run: pnpm config set store-dir "$HOME/.local/share/pnpm/store" --global
 
@@ -127,19 +115,23 @@ jobs:
       - name: "Install @expo/config-plugins"
         run: pnpm add @expo/config-plugins
 
-      # ========================
       # Install @babel/runtime to resolve bundling error
-      # ========================
       - name: "Install @babel/runtime"
         run: pnpm add @babel/runtime
 
-      # ========================
-      # ðŸ—ï¸ Build Execution
-      # ========================
-      - name: "ðŸš€ Trigger EAS Build"
+      # Debug Dependency Tree
+      - name: "ðŸ” Debug Dependency Tree"
+        run: |
+          echo "Listing installed dependencies..."
+          pnpm list --depth=0
+          echo "Checking for expo-constants..."
+          ls node_modules/expo-constants || echo "expo-constants not found!"
+
+      # Build Execution
+      - name: "ðŸš Trigger EAS Build"
         id: build
         run: |
-          echo "ðŸ”„ Initializing build process..."
+          echo "ðŸ” Initializing build process..."
           sudo apt-get install -y jq
           BUILD_JSON=$(eas build -p android --profile production --non-interactive --json)
           echo "Raw build output: $BUILD_JSON"
@@ -155,50 +147,43 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
   download-apk:
-    name: "ðŸ“¥ APK Artifact Handler"
+    name: "ðŸ“ APK Artifact Handler"
     runs-on: ubuntu-latest
     needs: build-android
     outputs:
       apk_path: ${{ steps.download.outputs.APK_PATH }}
     steps:
-      # ========================
-      # ðŸ› ï¸ Environment Setup
-      # ========================
-      - name: "ðŸ“¦ Checkout Repository"
+      # Environment Setup
+      - name: "ðŸ“ Checkout Repository"
         uses: actions/checkout@v4
 
       - name: "âš™ï¸ Setup Node.js"
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          # NOTE: Removed cache setting here as well
 
-      - name: "ðŸ”§ Install pnpm"
+      - name: "ðŸ” Install pnpm"
         run: |
           npm install -g pnpm
           pnpm --version
 
-      - name: "ðŸ“¦ Install Dependencies"
+      - name: "ðŸ“ Install Dependencies"
         run: pnpm install --frozen-lockfile
 
-      # ========================
-      # ðŸ“¦ Dependency Management
-      # ========================
-      - name: "ðŸ§° Install Build Tools"
+      # Dependency Management
+      - name: "ðŸ§ Install Build Tools"
         run: |
           pnpm add -g eas-cli@latest
           sudo apt-get update
           sudo apt-get install -y jq curl dotenv
 
-      # ========================
-      # ðŸ” Build Monitoring
-      # ========================
+      # Build Monitoring
       - name: "â³ Wait for Build Completion"
         run: |
           echo "â° Monitoring build status..."
           cd $GITHUB_WORKSPACE
           BUILD_ID=${{ needs.build-android.outputs.build_id }}
-          echo "ðŸ” Starting build monitoring for BUILD_ID: $BUILD_ID"
+          echo "ðŸ” Starting build monitoring for BUILD_ID: $BUILD_ID"
 
           # Initial check without JSON for better error visibility
           eas build:view $BUILD_ID || true
@@ -209,10 +194,10 @@ jobs:
 
           while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
             echo -e "\n=== Attempt $((RETRY_COUNT+1))/$MAX_RETRIES ==="
-            
+
             # Fetch build status in JSON format
             BUILD_STATUS_JSON=$(eas build:view --json $BUILD_ID)
-            echo "ðŸ“„ Raw API response: $BUILD_STATUS_JSON"
+            echo "ðŸ“ Raw API response: $BUILD_STATUS_JSON"
 
             # Validate JSON and check for empty response
             if ! echo "$BUILD_STATUS_JSON" | jq empty >/dev/null 2>&1 || [[ -z "$BUILD_STATUS_JSON" ]]; then
@@ -225,7 +210,7 @@ jobs:
             BUILD_STATUS=$(echo "$BUILD_STATUS_JSON" | jq -r '.status')
             ERROR_MESSAGE=$(echo "$BUILD_STATUS_JSON" | jq -r '.error.message // empty')
 
-            echo "ðŸ” Parsed status: $BUILD_STATUS"
+            echo "ðŸ” Parsed status: $BUILD_STATUS"
             [[ -n "$ERROR_MESSAGE" ]] && echo "âŒ Error message: $ERROR_MESSAGE"
 
             case $BUILD_STATUS in
@@ -243,7 +228,7 @@ jobs:
                 echo "$BUILD_STATUS_JSON" | jq .
                 exit 1
                 ;;
-              "NEW"|"IN_QUE"|"IN_PROGRESS"|"PENDING")
+              "NEW"|"IN_QUEUE"|"IN_PROGRESS"|"PENDING")
                 echo "â³ Build is still in progress..."
                 ;;
               *)
@@ -261,101 +246,95 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
-      # ========================
-      # ðŸ“¦ Artifact Handling
-      # ========================
-      - name: "ðŸ“¥ Download APK"
+      # Artifact Handling
+      - name: "ðŸ“ Download APK"
         id: download
         run: |
-          echo "ðŸ”½ Retrieving APK URL..."
+          echo "ðŸ” Retrieving APK URL..."
           APK_URL=$(eas build:view --json ${{ needs.build-android.outputs.build_id }} | jq -r '.artifacts.buildUrl')
           if [[ -z "$APK_URL" || "$APK_URL" == "null" ]]; then
             echo "âŒ Error: No APK URL found!"
             exit 1
           fi
-          echo "ðŸ“¥ Downloading APK from $APK_URL..."
+          echo "ðŸ“ Downloading APK from $APK_URL..."
           curl -L "$APK_URL" -o app-release.apk
           echo "APK_PATH=app-release.apk" >> $GITHUB_OUTPUT
 
-      - name: "ðŸ“¤ Upload Artifact"
+      - name: "ðŸ“ Upload Artifact"
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
           path: app-release.apk
 
   generate-changelog:
-    name: "ðŸ“œ Changelog Generator"
+    name: "ðŸ“ Changelog Generator"
     runs-on: ubuntu-latest
     needs: build-android
     outputs:
       changelog: ${{ steps.changelog.outputs.CHANGELOG }}
     steps:
-      # ========================
-      # ðŸ› ï¸ Repository Setup
-      # ========================
-      - name: "ðŸ“‚ Checkout with Full History"
+      # Repository Setup
+      - name: "ðŸ“ Checkout with Full History"
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # ========================
-      # ðŸ“„ Changelog Generation
-      # ========================
-      - name: "ðŸ“‹ Create Release Notes"
+      # Changelog Generation
+      - name: "ðŸ“ Create Release Notes"
         id: changelog
         run: |
-          echo "ðŸ“ Generating changelog from git history..."
+          echo "ðŸ“ Generating changelog from git history..."
           CHANGELOG=$(git log --pretty=format:"- %s (%h) by %an" -n 15)
           echo "$CHANGELOG" > changelog.txt
 
           # FIXED OUTPUT HANDLING (ONLY CHANGE)
           delimiter=$(openssl rand -hex 6)
-          echo "CHANGELOG<<${delimiter}" >> $GITHUB_OUTPUT
+          echo "CHANGELOG<<$delimiter" >> $GITHUB_OUTPUT
           cat changelog.txt >> $GITHUB_OUTPUT
-          echo "${delimiter}" >> $GITHUB_OUTPUT
+          echo "$delimiter" >> $GITHUB_OUTPUT
 
-      - name: "ðŸ“¤ Upload Changelog"
+      - name: "ðŸ“ Upload Changelog"
         uses: actions/upload-artifact@v4
         with:
           name: changelog
           path: changelog.txt
 
   create-release:
-    name: "ðŸš€ Smart Release Publisher"
+    name: "ðŸš Smart Release Publisher"
     runs-on: ubuntu-latest
-    needs: [build-android, download-apk, generate-changelog]
+    needs:
+      - build-android
+      - download-apk
+      - generate-changelog
     steps:
-      # ========================
-      # ðŸ“¥ Artifact Retrieval
-      # ========================
-      - name: "ðŸ“¦ Get APK Artifact"
+      # Artifact Retrieval
+      - name: "ðŸ“ Get APK Artifact"
         uses: actions/download-artifact@v4
         with:
           name: android-apk
 
-      - name: "ðŸ“„ Get Changelog"
+      - name: "ðŸ“ Get Changelog"
         uses: actions/download-artifact@v4
         with:
           name: changelog
 
-      # ========================
-      # ðŸ·ï¸ Release Creation
-      # ========================
-      - name: "ðŸŽšï¸ Determine Release Type"
+      # Release Creation
+      - name: "ðŸŽï¸ Determine Release Type"
         id: release-type
         run: |
-          echo "ðŸ” Detecting release type..."
+          echo "ðŸ” Detecting release type..."
           if [ "${{ needs.build-android.outputs.is_production }}" = "true" ]; then
-            echo "ðŸŸ¢ Production release detected"
+            echo "ðŸŸ Production release detected"
             RELEASE_TAG="v${{ needs.build-android.outputs.app_version }}"
             RELEASE_TITLE="Production Release v${{ needs.build-android.outputs.app_version }}"
           else
-            echo "ðŸŸ¡ Nightly build detected"
+            echo "ðŸŸ Nightly build detected"
             RELEASE_TAG="nightly-${{ needs.build-android.outputs.build_date }}"
             RELEASE_TITLE="Nightly Build (${{ needs.build-android.outputs.build_date }})"
           fi
           echo "RELEASE_TAG=${RELEASE_TAG}" >> $GITHUB_OUTPUT
-      - name: "ðŸŽ‰ Publish GitHub Release"
+
+      - name: "ðŸŽ Publish GitHub Release"
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.release-type.outputs.RELEASE_TAG }}
