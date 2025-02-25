@@ -35,12 +35,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          # Removed cache: "pnpm" so it won't expect pnpm to be pre-installed
+          # NOTE: Removed cache: "pnpm" to avoid expecting pnpm pre-installed
 
       - name: "🔧 Install pnpm"
         run: |
           npm install -g pnpm
-          pnpm --version  # for debugging
+          pnpm --version
 
       - name: "🧩 Install dependencies (ci)"
         run: pnpm install --frozen-lockfile
@@ -98,11 +98,16 @@ jobs:
       # ========================
       # 🔐 EAS Setup & Auth
       # ========================
+      - name: "🔧 Setup pnpm global bin"
+        run: pnpm setup
+
       - name: "⚙️ Install EAS CLI"
         run: pnpm add -g eas-cli@latest
 
       - name: "🔐 Verify Expo Credentials"
         run: npx eas whoami --token $EXPO_TOKEN
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       # ========================
       # 🏗️ Build Execution
@@ -142,7 +147,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          # Removed cache setting here as well
+          # NOTE: Removed cache setting here as well
 
       - name: "🔧 Install pnpm"
         run: |
@@ -209,17 +214,14 @@ jobs:
                 echo "✅ APK_URL=$APK_URL" >> $GITHUB_ENV
                 exit 0
                 ;;
-
               "ERRORED"|"CANCELLED")
                 echo "❌ Build failed! Error details:"
                 echo "$BUILD_STATUS_JSON" | jq .
                 exit 1
                 ;;
-
               "NEW"|"IN_QUE"|"IN_PROGRESS"|"PENDING")
                 echo "⏳ Build is still in progress..."
                 ;;
-
               *)
                 echo "❌ Unknown build status: $BUILD_STATUS"
                 exit 1
