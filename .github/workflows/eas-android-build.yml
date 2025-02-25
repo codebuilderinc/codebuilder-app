@@ -123,7 +123,7 @@ jobs:
         run: |
           echo "🔄 Initializing build process..."
           sudo apt-get install -y jq
-          BUILD_JSON=$(npx eas build -p android --profile production --non-interactive --json)
+          BUILD_JSON=$(eas build -p android --profile production --non-interactive --json)
           echo "Raw build output: $BUILD_JSON"
           BUILD_ID=$(echo "$BUILD_JSON" | jq -r '.[0].id')
           if [[ -z "$BUILD_ID" || "$BUILD_ID" == "null" ]]; then
