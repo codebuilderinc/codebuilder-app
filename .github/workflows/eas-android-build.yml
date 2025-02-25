@@ -128,12 +128,6 @@ jobs:
         run: pnpm add @expo/config-plugins
 
       # ========================
-      # Clear npx cache to avoid stale module resolution issues
-      # ========================
-      - name: "Clear npx cache"
-        run: npx clear-npx-cache
-
-      # ========================
       # 🏗️ Build Execution
       # ========================
       - name: "🚀 Trigger EAS Build"
