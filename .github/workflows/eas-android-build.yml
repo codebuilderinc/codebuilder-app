@@ -101,7 +101,13 @@ jobs:
       - name: "🔧 Setup pnpm global bin"
         env:
           SHELL: /bin/bash
-        run: pnpm setup
+        run: |
+          # Create a directory for global binaries
+          mkdir -p $HOME/.pnpm-global
+          # Set PNPM_HOME and add it to PATH for subsequent steps
+          echo "PNPM_HOME=$HOME/.pnpm-global" >> $GITHUB_ENV
+          echo "$HOME/.pnpm-global" >> $GITHUB_PATH
+          pnpm setup
 
       - name: "⚙️ Install EAS CLI"
         run: pnpm add -g eas-cli@latest
