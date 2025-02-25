@@ -116,6 +116,12 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       # ========================
+      # Clear npx cache to avoid stale module resolution issues
+      # ========================
+      - name: "Clear npx cache"
+        run: npx clear-npx-cache
+
+      # ========================
       # 🏗️ Build Execution
       # ========================
       - name: "🚀 Trigger EAS Build"
@@ -336,12 +342,4 @@ jobs:
             RELEASE_TAG="nightly-${{ needs.build-android.outputs.build_date }}"
             RELEASE_TITLE="Nightly Build (${{ needs.build-android.outputs.build_date }})"
           fi
-          echo "RELEASE_TAG=${RELEASE_TAG}" >> $GITHUB_OUTPUT
-      - name: "🎉 Publish GitHub Release"
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.release-type.outputs.RELEASE_TAG }}
-          name: ${{ steps.release-type.outputs.RELEASE_TITLE }}
-          body_path: changelog.txt
-          files: app-release.apk
-          prerelease: ${{ needs.build-android.outputs.is_production != 'true' }}
+          echo "RELEASE_TAG=${RELEASE_TAG}" >> $GITHUB
