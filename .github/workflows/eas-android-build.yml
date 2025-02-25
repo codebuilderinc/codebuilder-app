@@ -128,6 +128,12 @@ jobs:
         run: pnpm add @expo/config-plugins
 
       # ========================
+      # Install @babel/runtime to resolve bundling error
+      # ========================
+      - name: "Install @babel/runtime"
+        run: pnpm add @babel/runtime
+
+      # ========================
       # 🏗️ Build Execution
       # ========================
       - name: "🚀 Trigger EAS Build"
