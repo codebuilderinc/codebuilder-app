@@ -35,12 +35,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: "pnpm"
+          # Removed cache: "pnpm" so it won't expect pnpm to be pre-installed
 
-      - name: "🔧 Setup pnpm"
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
+      - name: "🔧 Install pnpm"
+        run: |
+          npm install -g pnpm
+          pnpm --version  # for debugging
 
       - name: "🧩 Install dependencies (ci)"
         run: pnpm install --frozen-lockfile
@@ -142,12 +142,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: "pnpm"
+          # Removed cache setting here as well
 
-      - name: "🔧 Setup pnpm"
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
+      - name: "🔧 Install pnpm"
+        run: |
+          npm install -g pnpm
+          pnpm --version
 
       - name: "📦 Install Dependencies"
         run: pnpm install --frozen-lockfile
@@ -242,7 +242,6 @@ jobs:
         id: download
         run: |
           echo "🔽 Retrieving APK URL..."
-          # Use the build:view command to get a clean JSON response
           APK_URL=$(eas build:view --json ${{ needs.build-android.outputs.build_id }} | jq -r '.artifacts.buildUrl')
           if [[ -z "$APK_URL" || "$APK_URL" == "null" ]]; then
             echo "❌ Error: No APK URL found!"
