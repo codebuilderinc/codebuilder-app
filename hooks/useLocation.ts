@@ -7,7 +7,8 @@ import {
   saveLocation,
 } from "../utils/location.utils";
 
-export const useLocation = () => {
+export const useLocation = (fcmToken: string | null) => {
+  // Accept fcmToken as parameter
   const [location, setLocation] =
     useState<LocationLibrary.LocationObject | null>(null);
   const [address, setAddress] =
@@ -19,8 +20,6 @@ export const useLocation = () => {
     try {
       setLoading(true);
 
-      // Request location permissions
-      console.log("Requesting location permissions...");
       const hasPermission = await requestLocationPermission();
       if (!hasPermission) {
         setError("Permission to access location was denied.");
@@ -28,27 +27,17 @@ export const useLocation = () => {
         return;
       }
 
-      // Get the current location
       const currentLocation = await getCurrentLocation();
-      console.log("Current location:", currentLocation);
       if (currentLocation) {
         const { latitude, longitude } = currentLocation.coords;
-
         setLocation(currentLocation);
 
-        // Reverse geocode to get address
         const geoAddress = await reverseGeocode(latitude, longitude);
-        console.log("Reverse geocoded address:", geoAddress);
         setAddress(geoAddress);
 
-        // Save location and address to the backend API
         if (geoAddress) {
-          await saveLocation(currentLocation, geoAddress);
-        } else {
-          console.log("Reverse geocode returned null; skipping API call.");
+          await saveLocation(currentLocation, geoAddress, fcmToken); // Pass fcmToken
         }
-      } else {
-        setError("Failed to fetch location.");
       }
     } catch (e) {
       console.error(e);
@@ -59,8 +48,10 @@ export const useLocation = () => {
   };
 
   useEffect(() => {
-    fetchLocation(); // Automatically fetch location on mount
-  }, []);
+    if (fcmToken) {
+      fetchLocation();
+    }
+  }, [fcmToken]); // Trigger fetch when token changes
 
   return { location, address, error, loading, fetchLocation };
 };
