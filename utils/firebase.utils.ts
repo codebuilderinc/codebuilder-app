@@ -1,4 +1,4 @@
-import { initializeApp, getApps, FirebaseApp } from "firebase/app";
+import { initializeApp, getApp, FirebaseApp } from "firebase/app";
 import Constants from "expo-constants";
 
 let firebaseApp: FirebaseApp | undefined;
@@ -14,7 +14,10 @@ export function getFirebaseApp(): FirebaseApp {
   }
 
   if (!firebaseApp) {
-    if (getApps().length === 0) {
+    try {
+      firebaseApp = getApp(); // Checks if the app is already initialized
+      console.log("Firebase already initialized");
+    } catch {
       firebaseApp = initializeApp({
         apiKey: config.eas.firebaseApiKey,
         authDomain: config.eas.firebaseAuthDomain,
@@ -24,10 +27,8 @@ export function getFirebaseApp(): FirebaseApp {
         appId: config.eas.firebaseAppId,
       });
       console.log("Firebase initialized");
-    } else {
-      firebaseApp = getApps()[0];
-      console.log("Firebase already initialized");
     }
   }
+
   return firebaseApp;
 }
