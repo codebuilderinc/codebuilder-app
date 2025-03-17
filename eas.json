@@ -7,9 +7,6 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "npm": {
-        "version": "11.1.0"
-      },
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleDebug",
@@ -32,9 +29,6 @@
     "production": {
       "distribution": "store",
       "autoIncrement": false,
-      "npm": {
-        "version": "11.1.0"
-      },
       "android": {
         "node": "22.14.0",
         "env": {
