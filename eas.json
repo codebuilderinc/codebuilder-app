@@ -7,13 +7,13 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "npm": {
+        "version": "11.1.0"
+      },
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleDebug",
-        "node": "22.14.0",
-        "npm": {
-          "version": "11.1.0"
-        }
+        "node": "22.14.0"
       },
       "ios": {
         "simulator": true
@@ -32,16 +32,16 @@
     "production": {
       "distribution": "store",
       "autoIncrement": false,
+      "npm": {
+        "version": "11.1.0"
+      },
       "android": {
         "node": "22.14.0",
         "env": {
           "EXPO_NO_CACHE": "1"
         },
         "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease",
-        "npm": {
-          "version": "11.1.0"
-        }
+        "gradleCommand": ":app:assembleRelease"
       },
       "ios": {
         "enterpriseProvisioning": "universal"
