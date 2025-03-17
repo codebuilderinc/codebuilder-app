@@ -1,7 +1,7 @@
 {
   "cli": {
-    "version": ">= 14.4.0",
-    "appVersionSource": "local" // Changed from "remote"
+    "version": ">= 15.40.0",
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
@@ -9,7 +9,11 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk",
-        "gradleCommand": ":app:assembleDebug"
+        "gradleCommand": ":app:assembleDebug",
+        "node": "22.14.0",
+        "npm": {
+          "version": "11.1.0"
+        }
       },
       "ios": {
         "simulator": true
@@ -18,7 +22,8 @@
     "preview": {
       "distribution": "internal",
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "node": "22.14.0"
       },
       "ios": {
         "buildConfiguration": "Release"
@@ -28,12 +33,15 @@
       "distribution": "store",
       "autoIncrement": false,
       "android": {
-        "node": "20.2.0",
+        "node": "22.14.0",
         "env": {
           "EXPO_NO_CACHE": "1"
         },
         "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease"
+        "gradleCommand": ":app:assembleRelease",
+        "npm": {
+          "version": "11.1.0"
+        }
       },
       "ios": {
         "enterpriseProvisioning": "universal"
