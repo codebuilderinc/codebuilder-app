@@ -35,15 +35,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          # NOTE: Removed cache: "pnpm" to avoid expecting pnpm pre-installed
-
-      - name: "🔧 Install pnpm"
-        run: |
-          npm install -g pnpm
-          pnpm --version
+          cache: "npm"
 
       - name: "🧩 Install dependencies (ci)"
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       # ========================
       # 🔄 Version Management
@@ -98,40 +93,11 @@ jobs:
       # ========================
       # 🔐 EAS Setup & Auth
       # ========================
-      - name: "🔧 Setup pnpm global bin"
-        env:
-          SHELL: /bin/bash
-        run: |
-          mkdir -p $HOME/.pnpm-global
-          echo "PNPM_HOME=$HOME/.pnpm-global" >> $GITHUB_ENV
-          echo "$HOME/.pnpm-global" >> $GITHUB_PATH
-          pnpm setup
-
       - name: "⚙️ Install EAS CLI"
-        run: pnpm add -g eas-cli@latest
+        run: npm install -g eas-cli@latest
 
       - name: "🔐 Verify Expo Credentials"
-        run: eas whoami --token $EXPO_TOKEN
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-
-      # ========================
-      # Ensure consistent pnpm store: Force reinstallation of dependencies
-      # ========================
-      - name: "Set pnpm global store directory"
-        run: pnpm config set store-dir "$HOME/.local/share/pnpm/store" --global
-
-      - name: "Reinstall dependencies with new store"
-        run: pnpm install --force
-
-      - name: "Install @expo/config-plugins"
-        run: pnpm add @expo/config-plugins
-
-      # ========================
-      # Install @babel/runtime to resolve bundling error
-      # ========================
-      - name: "Install @babel/runtime"
-        run: pnpm add @babel/runtime
+        run: npx eas whoami --token $EXPO_TOKEN
 
       # ========================
       # 🏗️ Build Execution
@@ -141,7 +107,7 @@ jobs:
         run: |
           echo "🔄 Initializing build process..."
           sudo apt-get install -y jq
-          BUILD_JSON=$(eas build -p android --profile production --non-interactive --json)
+          BUILD_JSON=$(npx eas build -p android --profile production --non-interactive --json)
           echo "Raw build output: $BUILD_JSON"
           BUILD_ID=$(echo "$BUILD_JSON" | jq -r '.[0].id')
           if [[ -z "$BUILD_ID" || "$BUILD_ID" == "null" ]]; then
@@ -171,22 +137,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          # NOTE: Removed cache setting here as well
-
-      - name: "🔧 Install pnpm"
-        run: |
-          npm install -g pnpm
-          pnpm --version
 
       - name: "📦 Install Dependencies"
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       # ========================
       # 📦 Dependency Management
       # ========================
       - name: "🧰 Install Build Tools"
         run: |
-          pnpm add -g eas-cli@latest
+          npm install -g eas-cli@latest
           sudo apt-get update
           sudo apt-get install -y jq curl dotenv
 
@@ -201,7 +161,7 @@ jobs:
           echo "🔍 Starting build monitoring for BUILD_ID: $BUILD_ID"
 
           # Initial check without JSON for better error visibility
-          eas build:view $BUILD_ID || true
+          npx eas build:view $BUILD_ID || true
 
           RETRY_COUNT=0
           MAX_RETRIES=120
@@ -211,7 +171,7 @@ jobs:
             echo -e "\n=== Attempt $((RETRY_COUNT+1))/$MAX_RETRIES ==="
             
             # Fetch build status in JSON format
-            BUILD_STATUS_JSON=$(eas build:view --json $BUILD_ID)
+            BUILD_STATUS_JSON=$(npx eas build:view --json $BUILD_ID)
             echo "📄 Raw API response: $BUILD_STATUS_JSON"
 
             # Validate JSON and check for empty response
@@ -238,14 +198,17 @@ jobs:
                 echo "✅ APK_URL=$APK_URL" >> $GITHUB_ENV
                 exit 0
                 ;;
+
               "ERRORED"|"CANCELLED")
                 echo "❌ Build failed! Error details:"
                 echo "$BUILD_STATUS_JSON" | jq .
                 exit 1
                 ;;
+
               "NEW"|"IN_QUE"|"IN_PROGRESS"|"PENDING")
                 echo "⏳ Build is still in progress..."
                 ;;
+
               *)
                 echo "❌ Unknown build status: $BUILD_STATUS"
                 exit 1
@@ -268,7 +231,8 @@ jobs:
         id: download
         run: |
           echo "🔽 Retrieving APK URL..."
-          APK_URL=$(eas build:view --json ${{ needs.build-android.outputs.build_id }} | jq -r '.artifacts.buildUrl')
+          # Use the build:view command to get a clean JSON response
+          APK_URL=$(npx eas build:view --json ${{ needs.build-android.outputs.build_id }} | jq -r '.artifacts.buildUrl')
           if [[ -z "$APK_URL" || "$APK_URL" == "null" ]]; then
             echo "❌ Error: No APK URL found!"
             exit 1
