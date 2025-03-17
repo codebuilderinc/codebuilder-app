@@ -1,4 +1,3 @@
-import React from "react";
 import { ScrollView, Text, StyleSheet, View, Button } from "react-native";
 import { useCeullar } from "@/hooks/useCellular";
 import * as Cellular from "expo-cellular";
