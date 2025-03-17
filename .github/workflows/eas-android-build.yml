@@ -1,4 +1,6 @@
 name: 🚀 EAS Android Build & Smart Release
+permissions:
+  contents: write
 
 on:
   push:
