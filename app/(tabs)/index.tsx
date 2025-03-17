@@ -8,13 +8,16 @@ import {
   ScrollView,
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
-import { useLocation } from "../../hooks/useLocation";
-import LogViewer from "../../components/LogViewer";
-import BatteryInfo from "../../components/BatteryInfo";
-import { triggerLocalSampleNotification } from "../../utils/notifications.utils";
+import { useLocation } from "@/hooks/useLocation";
+import LogViewer from "@/components/LogViewer";
+import BatteryInfo from "@/components/BatteryInfo";
+import { triggerLocalSampleNotification } from "@/utils/notifications.utils";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 export default function LocationComponent() {
-  const { location, address, error, loading, fetchLocation } = useLocation();
+  const { fcmToken } = usePushNotifications();
+  const { location, address, error, loading, fetchLocation } =
+    useLocation(fcmToken);
 
   const textColor = "#ffffff";
 
