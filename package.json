@@ -10,13 +10,9 @@
     "eas-build-preinstall": "node scripts/setupBatteryOptimization.js && node scripts/notificationSounds.js",
     "ios": "npm run prebuild && expo run:ios",
     "web": "npm run prebuild && expo start --web",
-    "test": "jest --watchAll",
     "postinstall": "node scripts/notificationSounds.js",
     "copy-sounds": "node scripts/notificationSounds.js",
     "doctor": "npx expo-doctor"
-  },
-  "jest": {
-    "preset": "jest-expo"
   },
   "dependencies": {
     "@dev-plugins/react-navigation": "^0.1.0",
@@ -79,8 +75,6 @@
     "expo-doctor": "^1.12.8",
     "fs-extra": "^11.3.0",
     "install": "^0.13.0",
-    "jest": "^29.7.0",
-    "jest-expo": "52.0.6",
     "metro-cache": "^0.82.0",
     "react-test-renderer": "19.0.0",
     "semver": "^7.7.1",
