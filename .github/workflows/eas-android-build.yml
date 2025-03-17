@@ -40,7 +40,7 @@ jobs:
           cache: "npm"
 
       - name: "🧩 Install dependencies (ci)"
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       # ========================
       # 🔄 Version Management
