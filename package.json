@@ -51,8 +51,8 @@
     "expo-web-browser": "^14.0.2",
     "firebase": "^11.4.0",
     "nativewind": "^4.1.23",
-    "react": "18.3.1",
-    "react-native": "0.76.7",
+    "react": "^19.0.0",
+    "react-native": "^0.78.0",
     "react-native-console-view": "^0.0.21",
     "react-native-maps": "1.18.0",
     "react-native-reanimated": "~3.16.1"
@@ -64,7 +64,6 @@
     "fs-extra": "^11.3.0",
     "install": "^0.13.0",
     "metro-cache": "^0.82.0",
-    "react-test-renderer": "19.0.0",
     "semver": "^7.7.1",
     "tailwindcss": "^4.0.14",
     "typescript": "^5.8.2"
