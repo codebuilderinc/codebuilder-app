@@ -103,7 +103,7 @@ module.exports = {
     },
     web: {
       bundler: "metro",
-      output: "static",
+      output: "server",
       favicon: "./assets/images/favicon.ico",
     },
     plugins: [
