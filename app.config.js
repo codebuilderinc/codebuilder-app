@@ -103,7 +103,7 @@ module.exports = {
     },
     web: {
       bundler: "metro",
-      output: "server",
+      output: "web-build",
       favicon: "./assets/images/favicon.ico",
     },
     plugins: [
@@ -146,7 +146,6 @@ module.exports = {
     ],
     experiments: {
       typedRoutes: true,
-      reactServerFunctions: true,
     },
   },
 };
