@@ -1,5 +1,16 @@
 {
+  "extends": "expo/tsconfig.base",
   "compilerOptions": {
+    // --- FORCEFUL FIX: ADD THE 'lib' OPTION ---
+    // This tells TypeScript to ONLY use the modern JavaScript language features
+    // and to EXPLICITLY EXCLUDE the 'dom' library for web browsers.
+    // This should resolve the 'Alert' vs 'alert' conflict.
+    "lib": [
+      "esnext"
+    ],
+    // --- STRONGLY RECOMMENDED ---
+    // Enabling strict mode is a best practice that helps catch bugs early.
+    "strict": true,
     "moduleResolution": "node",
     "module": "esnext",
     "target": "esnext",
@@ -7,7 +18,6 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "strict": false,
     "baseUrl": ".",
     "paths": {
       "@/*": [
@@ -25,9 +35,5 @@
     "node_modules",
     "babel.config.cjs",
     "metro.config.js"
-  ],
-  "types": [
-    "@types/expo__camera"
-  ],
-  "extends": "expo/tsconfig.base"
+  ]
 }
