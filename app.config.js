@@ -104,7 +104,7 @@ module.exports = {
     web: {
       bundler: "metro",
       output: "web-build",
-      favicon: "./assets/images/favicon.ico",
+      favicon: "./assets/images/favicon.png",
     },
     plugins: [
       withNotificationToolsReplace,
