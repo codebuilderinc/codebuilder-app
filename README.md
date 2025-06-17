@@ -57,3 +57,7 @@ To run the app in development mode, use the following command:
 ```sh
 expo start
 ```
+
+## Activity
+
+![Alt](https://repobeats.axiom.co/api/embed/859d6883de8d21b5bb9eccfc733dfccfee0e5dab.svg "Repobeats analytics image")
