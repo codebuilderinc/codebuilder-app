@@ -11,8 +11,8 @@
     // --- STRONGLY RECOMMENDED ---
     // Enabling strict mode is a best practice that helps catch bugs early.
     "strict": true,
-    "moduleResolution": "node",
-    "module": "esnext",
+    "moduleResolution": "node16",
+    "module": "Node16",
     "target": "esnext",
     "jsx": "react-jsx",
     "esModuleInterop": true,
