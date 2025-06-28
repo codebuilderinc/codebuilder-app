@@ -21,7 +21,7 @@ export const usePushNotifications = () => {
       registerForPushNotificationsAsync().then(async (token) => {
         if (token) {
           console.log(
-            "Finished registerping for Notifications - FCM Token:",
+            "Finished registering for Notifications - FCM Token:",
             token
           );
           setFcmToken(token); // Store the push token
@@ -59,6 +59,8 @@ export const usePushNotifications = () => {
         shouldShowAlert: true,
         shouldPlaySound: true,
         shouldSetBadge: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
       }),
     });
 
@@ -76,8 +78,8 @@ export const useNotificationObserver = () => {
   useEffect(() => {
     const redirectToUrl = (notification: Notifications.Notification) => {
       const url = notification.request.content.data?.url;
-      if (url) {
-        router.push(url);
+      if (typeof url === "string") {
+        router.push(url as any);
       }
     };
 
