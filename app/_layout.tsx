@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-// import * as Notifications from "expo-notifications";
 import { useNavigationContainerRef } from "@react-navigation/native";
 import { useReactNavigationDevTools } from "@dev-plugins/react-navigation";
 import { SplashScreen } from "expo-router";
-import { usePushNotifications } from "@/hooks/usePushNotifications";
-import { useNotificationObserver } from "@/hooks/usePushNotifications";
-// import { registerForPushNotificationsAsync } from "@/utils/notifications";
-// import { getFirebaseApp } from "@/utils/firebase";
+import {
+  usePushNotifications,
+  useNotificationObserver,
+} from "@/hooks/usePushNotifications";
 import { useFonts } from "expo-font";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import {
@@ -19,25 +18,35 @@ import "react-native-reanimated";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { registerBackgroundFetch } from "@/utils/tasks.utils";
 import ErrorBoundary from "@/components/ErrorBoundary";
-// FIX 2: Import the exception handlers from the library
+
 import {
   setJSExceptionHandler,
   setNativeExceptionHandler,
 } from "react-native-exception-handler";
-import { reportError } from "@/services/errorReporting.service";
-import { ErrorInfo } from "react";
-
-// --- NEW: Import our notification function ---
+import { reportError, safeReport } from "@/services/errorReporting.service";
 import { showFatalErrorNotification } from "@/utils/notifications.utils";
 
 // --- Global Exception Handler Setup ---
 
-const jsExceptionHandler = (error: Error, isFatal: boolean) => {
+const jsExceptionHandler = (maybeError: unknown, isFatal: boolean) => {
+  const error =
+    maybeError instanceof Error
+      ? maybeError
+      : new Error(
+          typeof maybeError === "string"
+            ? maybeError
+            : JSON.stringify(maybeError) || "Unknown non-Error thrown"
+        );
+
   console.log("Caught JS Exception:", error, isFatal);
-  reportError(error, { isFatal });
+
+  // Use safeReport to avoid throwing from inside handler
+  safeReport(error, {
+    isFatal,
+    errorInfo: { componentStack: "jsExceptionHandler" },
+  });
 
   if (isFatal) {
-    // Pass the error to the notification function
     showFatalErrorNotification(error);
   }
 };
@@ -45,9 +54,12 @@ const jsExceptionHandler = (error: Error, isFatal: boolean) => {
 const nativeExceptionHandler = (exceptionString: string) => {
   console.log("Caught Native Exception:", exceptionString);
   const error = new Error(`Native Exception: ${exceptionString}`);
-  reportError(error, { isFatal: true });
 
-  // Pass the newly created error to the notification function
+  safeReport(error, {
+    isFatal: true,
+    errorInfo: { componentStack: "nativeExceptionHandler" },
+  });
+
   showFatalErrorNotification(error);
 };
 
@@ -58,9 +70,8 @@ setNativeExceptionHandler(nativeExceptionHandler);
 
 export default function RootLayout() {
   const navigationRef = useNavigationContainerRef();
-  const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
 
-  // Enable push notifications and observe notification responses
+  // Enable push notifications and observer
   usePushNotifications();
   useNotificationObserver();
 
@@ -69,19 +80,14 @@ export default function RootLayout() {
     registerBackgroundFetch();
   }, []);
 
-  // Enable React Navigation DevTools for debugging
+  // Enable React Navigation DevTools
   useReactNavigationDevTools(navigationRef);
 
   // Load fonts
-  const [loaded, error] = useFonts({
+  const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     ...FontAwesome.font,
   });
-
-  // Handle font loading errors
-  useEffect(() => {
-    if (error) throw error;
-  }, [error]);
 
   // Hide the splash screen once fonts are loaded
   useEffect(() => {
@@ -90,7 +96,6 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
-  // Prevent rendering until fonts are loaded
   if (!loaded) {
     return null;
   }
