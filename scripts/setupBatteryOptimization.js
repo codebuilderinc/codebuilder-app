@@ -78,44 +78,39 @@ class BatteryOptimizationHelper(reactContext: ReactApplicationContext) : ReactCo
             val context: Context = reactApplicationContext
             val packageName = context.packageName
 
-            Log.d("BatteryOptimizationHelper", "Opening battery optimization settings for " + packageName)
-
-            // First, try opening the specific battery optimization settings
-            val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-            intent.data = Uri.parse("package:" + packageName)
+            // Try to open the specific screen to request ignore battery optimizations for this app
+            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+            intent.data = Uri.parse("package:$packageName")
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
             if (intent.resolveActivity(context.packageManager) != null) {
                 context.startActivity(intent)
-                Log.d("BatteryOptimizationHelper", "Battery optimization settings opened!")
+                Log.d("BatteryOptimizationHelper", "Requested ignore battery optimizations for $packageName")
             } else {
-                // If direct setting fails, open general battery settings instead
-                Log.e("BatteryOptimizationHelper", "Could not resolve activity for battery optimization settings! Trying general battery settings...")
-                val generalIntent = Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS)
+                // Fallback: open the general battery optimization settings
+                val generalIntent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
                 generalIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-
                 if (generalIntent.resolveActivity(context.packageManager) != null) {
                     context.startActivity(generalIntent)
-                    Log.d("BatteryOptimizationHelper", "General battery settings opened!")
+                    Log.d("BatteryOptimizationHelper", "Opened general battery optimization settings")
                 } else {
-                    Log.e("BatteryOptimizationHelper", "Could not resolve activity for general battery settings!")
+                    Log.e("BatteryOptimizationHelper", "Could not resolve activity for battery optimization settings!")
                 }
             }
         } catch (e: Exception) {
             Log.e("BatteryOptimizationHelper", "Error opening battery settings: " + e.message, e)
         }
     }
-}
 
-class BatteryOptimizationPackage : ReactPackage {
-    override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
-        return listOf(BatteryOptimizationHelper(reactContext))
-    }
+    class BatteryOptimizationPackage : ReactPackage {
+        override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
+            return listOf(BatteryOptimizationHelper(reactContext))
+        }
 
-    override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> {
-        return emptyList()
+        override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> {
+            return emptyList()
+        }
     }
-}
 `;
 
 const createBatteryOptimizationHelper = async () => {
