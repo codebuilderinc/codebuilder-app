@@ -146,6 +146,7 @@ module.exports = {
     ],
     experiments: {
       typedRoutes: true,
+      reactCanary: true,
     },
   },
 };
