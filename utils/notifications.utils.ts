@@ -43,9 +43,9 @@ export const registerForPushNotificationsAsync = async () => {
 
     console.log("Expo Push Token:", token);
 
+    // Save the token to the server
     if (token) {
-      // This function seems to be missing from your provided file, assuming it exists elsewhere
-      // await savePushToken(token);
+      await savePushToken(token);
     }
 
     return token;
@@ -129,8 +129,28 @@ export const handleBackgroundNotifications = () => {
 };
 
 export const savePushToken = async (token: string): Promise<void> => {
-  // Implementation from your file
-  // ...
+  try {
+    const response = await fetch(
+      "https://new.codebuilder.org/api/notifications/subscribe",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          endpoint: "https://fcm.googleapis.com/fcm/send",
+          keys: { token },
+          type: "fcm",
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Error saving token: ${response.statusText}`);
+    }
+
+    console.log("Push token saved to server successfully.");
+  } catch (error) {
+    console.error("Error saving push token to server:", error);
+  }
 };
 
 // Example function to trigger a local notification
