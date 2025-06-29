@@ -52,11 +52,10 @@ export const reverseGeocode = async (
 /**
  * Save the user's location to the backend API.
  */
-
 export const saveLocation = async (
   location: LocationLibrary.LocationObject,
   geoAddress: LocationLibrary.LocationGeocodedAddress,
-  token: string | null // Add token parameter
+  token: string | null
 ): Promise<void> => {
   if (!token) {
     console.log("No FCM token available; skipping save location.");
@@ -67,10 +66,9 @@ export const saveLocation = async (
 
   try {
     const payload = {
-      subscriptionId: token, // Use the passed token
+      subscriptionId: token,
       latitude: location.coords.latitude,
       longitude: location.coords.longitude,
-      // ... (rest of the payload remains the same)
     };
 
     const response = await fetch("https://new.codebuilder.org/api/location", {
@@ -79,12 +77,18 @@ export const saveLocation = async (
       body: JSON.stringify(payload),
     });
 
+    const responseBody = await response.text(); // Always try to read the body, even if it's empty
+
     if (!response.ok) {
-      throw new Error(`Error saving location: ${response.statusText}`);
+      throw new Error(
+        `HTTP ${response.status}: ${response.statusText}\nResponse Body: ${
+          responseBody || "No content"
+        }`
+      );
     }
 
     console.log("Location and address saved to server successfully.");
-  } catch (error) {
-    console.error("Error saving location to server:", error);
+  } catch (error: any) {
+    console.error("Error saving location to server:", error?.message || error);
   }
 };
