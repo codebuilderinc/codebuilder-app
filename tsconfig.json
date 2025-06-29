@@ -11,13 +11,19 @@
     // --- STRONGLY RECOMMENDED ---
     // Enabling strict mode is a best practice that helps catch bugs early.
     "strict": true,
-    "moduleResolution": "node16",
-    "module": "Node16",
-    "target": "esnext",
+    // ESM-aware resolution and output
+    "moduleResolution": "nodenext",
+    "module": "NodeNext",
+    "customConditions": [
+      "react-native"
+    ],
+    "target": "es2020",
+    "allowSyntheticDefaultImports": true,
     "jsx": "react-jsx",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    // Path aliasing
     "baseUrl": ".",
     "paths": {
       "@/*": [
