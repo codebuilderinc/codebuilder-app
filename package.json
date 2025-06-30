@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "start": "expo start",
-    "prebuild": "node scripts/setupBatteryOptimization.js && node scripts/notificationSounds.js",
+    "prebuild": "node scripts/setupExceptionHandler.js",
+    "eas-build-pre-install": "node scripts/setupExceptionHandler.js",
     "android": "npm run prebuild && expo run:android",
     "bump-version": "node scripts/bumpVersion.js",
     "eas-build-preinstall": "node scripts/setupBatteryOptimization.js && node scripts/notificationSounds.js",
