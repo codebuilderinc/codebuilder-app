@@ -4,7 +4,7 @@ permissions:
 
 on:
   push:
-    branches: [main]
+    branches: ['**']  # run on any branch
   workflow_dispatch:
 
 env:
@@ -21,6 +21,8 @@ jobs:
       build_number: ${{ steps.version-control.outputs.build_number }}
       build_date: ${{ steps.version-control.outputs.build_date }}
       is_production: ${{ steps.version-control.outputs.is_production }}
+      eas_profile: ${{ steps.version-control.outputs.eas_profile }}  # added dynamic profile output
+      eas_channel: ${{ steps.version-control.outputs.eas_channel }}  # added dynamic channel output
     steps:
       # ========================
       # 🛠️ Repository Setup
@@ -68,13 +70,18 @@ jobs:
       - name: "🏷️ Set CI/CD Versions"
         id: version-control
         run: |
-          # Use version from version.json (requires jq)
-          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+          # Determine branch and environment
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          if [ "${BRANCH_NAME}" == "main" ]; then
             APP_VERSION=$(jq -r '.version' version.json)
             IS_PRODUCTION="true"
+            EAS_PROFILE=production
+            EAS_CHANNEL=production
           else
-            APP_VERSION="1.0.0-prerelease.${{ github.run_number }}"
+            APP_VERSION="1.0.0-prerelease.${GITHUB_RUN_NUMBER}"
             IS_PRODUCTION="false"
+            EAS_PROFILE=development  # dev build profile
+            EAS_CHANNEL="dev-${BRANCH_NAME}"  # dev release channel
           fi
 
           # Generate build identifiers
@@ -82,15 +89,19 @@ jobs:
           BUILD_DATE=$(date +'%Y%m%d-%H%M%S')
 
           # Set outputs for downstream jobs
-          echo "app_version=$APP_VERSION" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
-          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "is_production=$IS_PRODUCTION" >> $GITHUB_OUTPUT
+          echo "app_version=${APP_VERSION}" >> $GITHUB_OUTPUT
+          echo "build_number=${BUILD_NUMBER}" >> $GITHUB_OUTPUT
+          echo "build_date=${BUILD_DATE}" >> $GITHUB_OUTPUT
+          echo "is_production=${IS_PRODUCTION}" >> $GITHUB_OUTPUT
+          echo "eas_profile=${EAS_PROFILE}" >> $GITHUB_OUTPUT
+          echo "eas_channel=${EAS_CHANNEL}" >> $GITHUB_OUTPUT
 
           # Export environment variables
-          echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
-          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
-          echo "BUILD_DATE=$BUILD_DATE" >> $GITHUB_ENV
+          echo "APP_VERSION=${APP_VERSION}" >> $GITHUB_ENV
+          echo "BUILD_NUMBER=${BUILD_NUMBER}" >> $GITHUB_ENV
+          echo "BUILD_DATE=${BUILD_DATE}" >> $GITHUB_ENV
+          echo "EAS_PROFILE=${EAS_PROFILE}" >> $GITHUB_ENV
+          echo "EAS_CHANNEL=${EAS_CHANNEL}" >> $GITHUB_ENV
 
       # ========================
       # 🔐 EAS Setup & Auth
@@ -107,9 +118,9 @@ jobs:
       - name: "🚀 Trigger EAS Build"
         id: build
         run: |
-          echo "🔄 Initializing build process..."
+          echo "🔄 Initializing build process with profile=${EAS_PROFILE} on channel=${EAS_CHANNEL}..."
           sudo apt-get install -y jq
-          BUILD_JSON=$(npx eas build -p android --profile production --non-interactive --json)
+          BUILD_JSON=$(npx eas build -p android --profile $EAS_PROFILE --channel $EAS_CHANNEL --non-interactive --json)
           echo "Raw build output: $BUILD_JSON"
           BUILD_ID=$(echo "$BUILD_JSON" | jq -r '.[0].id')
           if [[ -z "$BUILD_ID" || "$BUILD_ID" == "null" ]]; then
@@ -170,7 +181,8 @@ jobs:
           SLEEP_TIME=30
 
           while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
-            echo -e "\n=== Attempt $((RETRY_COUNT+1))/$MAX_RETRIES ==="
+            echo -e "
+=== Attempt $((RETRY_COUNT+1))/$MAX_RETRIES ==="
             
             # Fetch build status in JSON format
             BUILD_STATUS_JSON=$(npx eas build:view --json $BUILD_ID)
@@ -233,7 +245,6 @@ jobs:
         id: download
         run: |
           echo "🔽 Retrieving APK URL..."
-          # Use the build:view command to get a clean JSON response
           APK_URL=$(npx eas build:view --json ${{ needs.build-android.outputs.build_id }} | jq -r '.artifacts.buildUrl')
           if [[ -z "$APK_URL" || "$APK_URL" == "null" ]]; then
             echo "❌ Error: No APK URL found!"
@@ -321,6 +332,8 @@ jobs:
             RELEASE_TITLE="Nightly Build (${{ needs.build-android.outputs.build_date }})"
           fi
           echo "RELEASE_TAG=${RELEASE_TAG}" >> $GITHUB_OUTPUT
+          echo "RELEASE_TITLE=${RELEASE_TITLE}" >> $GITHUB_OUTPUT
+
       - name: "🎉 Publish GitHub Release"
         uses: softprops/action-gh-release@v2
         with:
