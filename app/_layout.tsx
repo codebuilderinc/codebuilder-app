@@ -25,6 +25,7 @@ import {
 } from "react-native-exception-handler";
 import { reportError, safeReport } from "@/services/errorReporting.service";
 import { showFatalErrorNotification } from "@/utils/notifications.utils";
+import { setupGlobalErrorHandlers } from "../utils/globalErrorhandler";
 
 // --- Global Exception Handler Setup ---
 
@@ -105,6 +106,10 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+
+  useEffect(() => {
+    setupGlobalErrorHandlers();
+  }, []);
 
   return (
     <ErrorBoundary>
