@@ -4,7 +4,7 @@ permissions:
 
 on:
   push:
-    branches: ['**']  # run on any branch
+    branches: ["**"] # run on any branch
   workflow_dispatch:
 
 env:
@@ -21,8 +21,8 @@ jobs:
       build_number: ${{ steps.version-control.outputs.build_number }}
       build_date: ${{ steps.version-control.outputs.build_date }}
       is_production: ${{ steps.version-control.outputs.is_production }}
-      eas_profile: ${{ steps.version-control.outputs.eas_profile }}  # added dynamic profile output
-      eas_channel: ${{ steps.version-control.outputs.eas_channel }}  # added dynamic channel output
+      eas_profile: ${{ steps.version-control.outputs.eas_profile }} # added dynamic profile output
+      eas_channel: ${{ steps.version-control.outputs.eas_channel }} # added dynamic channel output
     steps:
       # ========================
       # 🛠️ Repository Setup
@@ -181,8 +181,7 @@ jobs:
           SLEEP_TIME=30
 
           while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
-            echo -e "
-=== Attempt $((RETRY_COUNT+1))/$MAX_RETRIES ==="
+            echo -e "=== Attempt $((RETRY_COUNT+1))/$MAX_RETRIES ==="
             
             # Fetch build status in JSON format
             BUILD_STATUS_JSON=$(npx eas build:view --json $BUILD_ID)
