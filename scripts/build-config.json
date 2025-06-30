@@ -1,0 +1,7 @@
+{
+      "scripts": [
+            "setupBatteryOptimizations.js",
+            "notificationSounds.ts",
+            "setupExceptionHandler.js"
+      ]
+}
