@@ -29,7 +29,9 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          tabBarIcon: ({ color }: { color: string }) => (
+            <TabBarIcon name="code" color={color} />
+          ),
           headerRight: () => (
             <Link href="/modal" asChild>
               <Pressable>
@@ -50,7 +52,7 @@ export default function TabLayout() {
         name="jobs"
         options={{
           title: "Jobs",
-          tabBarIcon: ({ color }) => (
+          tabBarIcon: ({ color }: { color: string }) => (
             <TabBarIcon name="briefcase" color={color} />
           ),
         }}
@@ -59,14 +61,18 @@ export default function TabLayout() {
         name="settings"
         options={{
           title: "Settings",
-          tabBarIcon: ({ color }) => <TabBarIcon name="cog" color={color} />,
+          tabBarIcon: ({ color }: { color: string }) => (
+            <TabBarIcon name="cog" color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="cellular"
         options={{
           title: "Cellular",
-          tabBarIcon: ({ color }) => <TabBarIcon name="phone" color={color} />,
+          tabBarIcon: ({ color }: { color: string }) => (
+            <TabBarIcon name="phone" color={color} />
+          ),
         }}
       />
     </Tabs>
