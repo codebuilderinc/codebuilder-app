@@ -42,6 +42,7 @@ module.exports = {
       firebaseStorageBucket: process.env.FIREBASE_STORAGE_BUCKET,
       firebaseMessagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
       firebaseAppId: process.env.FIREBASE_APP_ID,
+      googleWebClientId: process.env.GOOGLE_WEB_CLIENT_ID,
     },
     orientation: "portrait",
     icon: "./assets/images/icon.png",
@@ -135,6 +136,7 @@ module.exports = {
       ],
       "@react-native-firebase/app",
       "@react-native-firebase/messaging",
+      "@react-native-google-signin/google-signin",
       // Add the iOS sound plugin
       [withIOSSounds],
       [

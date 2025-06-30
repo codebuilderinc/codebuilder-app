@@ -40,6 +40,7 @@ CodeBuilder Admin is a mobile application built with React Native and Expo. This
 
    ```env
    GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+   GOOGLE_WEB_CLIENT_ID=your_google_web_client_id
    FIREBASE_API_KEY=your_firebase_api_key
    FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
    FIREBASE_PROJECT_ID=your_firebase_project_id
