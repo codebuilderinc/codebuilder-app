@@ -4,7 +4,7 @@ permissions:
 
 on:
   push:
-    branches: ["**"] # run on any branch
+    branches: ["**"] # Run on all branches
   workflow_dispatch:
 
 env:
@@ -21,8 +21,7 @@ jobs:
       build_number: ${{ steps.version-control.outputs.build_number }}
       build_date: ${{ steps.version-control.outputs.build_date }}
       is_production: ${{ steps.version-control.outputs.is_production }}
-      eas_profile: ${{ steps.version-control.outputs.eas_profile }} # added dynamic profile output
-      eas_channel: ${{ steps.version-control.outputs.eas_channel }} # added dynamic channel output
+      branch_name: ${{ steps.extract-branch.outputs.branch_name }}
     steps:
       # ========================
       # 🛠️ Repository Setup
@@ -31,6 +30,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: "🔍 Extract branch name"
+        id: extract-branch
+        shell: bash
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "Branch: $BRANCH_NAME"
 
       # ========================
       # ⚙️ Environment Configuration
@@ -70,18 +77,18 @@ jobs:
       - name: "🏷️ Set CI/CD Versions"
         id: version-control
         run: |
-          # Determine branch and environment
-          BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          if [ "${BRANCH_NAME}" == "main" ]; then
+          # Use version from version.json (requires jq)
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
             APP_VERSION=$(jq -r '.version' version.json)
             IS_PRODUCTION="true"
-            EAS_PROFILE=production
-            EAS_CHANNEL=production
           else
-            APP_VERSION="1.0.0-prerelease.${GITHUB_RUN_NUMBER}"
+            # For non-main branches, create a prerelease version with branch name
+            BRANCH_NAME=${{ steps.extract-branch.outputs.branch_name }}
+            SANITIZED_BRANCH=$(echo "$BRANCH_NAME" | sed 's/[^a-zA-Z0-9]/-/g')
+            # Get base version from version.json
+            BASE_VERSION=$(jq -r '.version' version.json)
+            APP_VERSION="${BASE_VERSION}-pre.${SANITIZED_BRANCH}.${{ github.run_number }}"
             IS_PRODUCTION="false"
-            EAS_PROFILE=development  # dev build profile
-            EAS_CHANNEL="dev-${BRANCH_NAME}"  # dev release channel
           fi
 
           # Generate build identifiers
@@ -89,19 +96,15 @@ jobs:
           BUILD_DATE=$(date +'%Y%m%d-%H%M%S')
 
           # Set outputs for downstream jobs
-          echo "app_version=${APP_VERSION}" >> $GITHUB_OUTPUT
-          echo "build_number=${BUILD_NUMBER}" >> $GITHUB_OUTPUT
-          echo "build_date=${BUILD_DATE}" >> $GITHUB_OUTPUT
-          echo "is_production=${IS_PRODUCTION}" >> $GITHUB_OUTPUT
-          echo "eas_profile=${EAS_PROFILE}" >> $GITHUB_OUTPUT
-          echo "eas_channel=${EAS_CHANNEL}" >> $GITHUB_OUTPUT
+          echo "app_version=$APP_VERSION" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+          echo "is_production=$IS_PRODUCTION" >> $GITHUB_OUTPUT
 
           # Export environment variables
-          echo "APP_VERSION=${APP_VERSION}" >> $GITHUB_ENV
-          echo "BUILD_NUMBER=${BUILD_NUMBER}" >> $GITHUB_ENV
-          echo "BUILD_DATE=${BUILD_DATE}" >> $GITHUB_ENV
-          echo "EAS_PROFILE=${EAS_PROFILE}" >> $GITHUB_ENV
-          echo "EAS_CHANNEL=${EAS_CHANNEL}" >> $GITHUB_ENV
+          echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
+          echo "BUILD_DATE=$BUILD_DATE" >> $GITHUB_ENV
 
       # ========================
       # 🔐 EAS Setup & Auth
@@ -118,9 +121,19 @@ jobs:
       - name: "🚀 Trigger EAS Build"
         id: build
         run: |
-          echo "🔄 Initializing build process with profile=${EAS_PROFILE} on channel=${EAS_CHANNEL}..."
+          echo "🔄 Initializing build process..."
           sudo apt-get install -y jq
-          BUILD_JSON=$(npx eas build -p android --profile $EAS_PROFILE --channel $EAS_CHANNEL --non-interactive --json)
+
+          # Choose profile based on branch
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            BUILD_PROFILE="production"
+          else
+            BUILD_PROFILE="preview"  # Use a different profile for pre-releases if needed
+          fi
+
+          echo "Using build profile: $BUILD_PROFILE"
+
+          BUILD_JSON=$(npx eas build -p android --profile $BUILD_PROFILE --non-interactive --json)
           echo "Raw build output: $BUILD_JSON"
           BUILD_ID=$(echo "$BUILD_JSON" | jq -r '.[0].id')
           if [[ -z "$BUILD_ID" || "$BUILD_ID" == "null" ]]; then
@@ -181,7 +194,7 @@ jobs:
           SLEEP_TIME=30
 
           while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
-            echo -e "=== Attempt $((RETRY_COUNT+1))/$MAX_RETRIES ==="
+            echo -e "\n=== Attempt $((RETRY_COUNT+1))/$MAX_RETRIES ==="
             
             # Fetch build status in JSON format
             BUILD_STATUS_JSON=$(npx eas build:view --json $BUILD_ID)
@@ -244,6 +257,7 @@ jobs:
         id: download
         run: |
           echo "🔽 Retrieving APK URL..."
+          # Use the build:view command to get a clean JSON response
           APK_URL=$(npx eas build:view --json ${{ needs.build-android.outputs.build_id }} | jq -r '.artifacts.buildUrl')
           if [[ -z "$APK_URL" || "$APK_URL" == "null" ]]; then
             echo "❌ Error: No APK URL found!"
@@ -284,7 +298,6 @@ jobs:
           CHANGELOG=$(git log --pretty=format:"- %s (%h) by %an" -n 15)
           echo "$CHANGELOG" > changelog.txt
 
-          # FIXED OUTPUT HANDLING (ONLY CHANGE)
           delimiter=$(openssl rand -hex 6)
           echo "CHANGELOG<<${delimiter}" >> $GITHUB_OUTPUT
           cat changelog.txt >> $GITHUB_OUTPUT
@@ -326,9 +339,10 @@ jobs:
             RELEASE_TAG="v${{ needs.build-android.outputs.app_version }}"
             RELEASE_TITLE="Production Release v${{ needs.build-android.outputs.app_version }}"
           else
-            echo "🟡 Nightly build detected"
-            RELEASE_TAG="nightly-${{ needs.build-android.outputs.build_date }}"
-            RELEASE_TITLE="Nightly Build (${{ needs.build-android.outputs.build_date }})"
+            echo "🟡 Pre-release build detected"
+            BRANCH_NAME="${{ needs.build-android.outputs.branch_name }}"
+            RELEASE_TAG="prerelease-${BRANCH_NAME}-${{ needs.build-android.outputs.build_date }}"
+            RELEASE_TITLE="Pre-release (${BRANCH_NAME}) v${{ needs.build-android.outputs.app_version }}"
           fi
           echo "RELEASE_TAG=${RELEASE_TAG}" >> $GITHUB_OUTPUT
           echo "RELEASE_TITLE=${RELEASE_TITLE}" >> $GITHUB_OUTPUT
