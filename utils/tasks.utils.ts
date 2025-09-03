@@ -8,7 +8,7 @@ TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
     try {
         console.log('----------------------- Background fetch task started ---------------------');
         // Perform your API request
-        const response = await fetch('https://new.codebuilder.org/api/jobs');
+        const response = await fetch('https://api.codebuilder.org/jobs/fetch');
         const contentType = response.headers.get('content-type') || '';
 
         if (!response.ok) {
