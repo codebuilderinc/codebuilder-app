@@ -16,26 +16,17 @@ export default function TabLayout() {
     return (
         <Tabs
             screenOptions={{
-                tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-                // Disable the static render of the header on web
-                // to prevent a hydration error in React Navigation v6.
-                headerShown: useClientOnlyValue(false, true),
+                //tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+                // Force header to be completely hidden for all tabs
+                headerShown: false,
             }}
         >
             <Tabs.Screen
                 name="index"
                 options={{
                     title: 'Home',
+                    // We'll handle headers manually in each screen component
                     tabBarIcon: ({ color }: { color: string }) => <TabBarIcon name="code" color={color} />,
-                    headerRight: () => (
-                        <Link href="/modal" asChild>
-                            <Pressable>
-                                {({ pressed }) => (
-                                    <FontAwesome name="info-circle" size={25} color={Colors[colorScheme ?? 'light'].text} style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }} />
-                                )}
-                            </Pressable>
-                        </Link>
-                    ),
                 }}
             />
             <Tabs.Screen

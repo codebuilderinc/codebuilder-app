@@ -5,6 +5,8 @@ import { notifyError } from '@/services/notifier.service';
 // JavaScript Error Handler
 export const setupGlobalErrorHandlers = () => {
     setJSExceptionHandler((error, isFatal) => {
+        // Always print error to console for debugging
+        console.error('Global JS Exception:', error, 'isFatal:', isFatal);
         // Report the error using your actual reportError function
         reportError(error, { isFatal });
 
@@ -15,6 +17,8 @@ export const setupGlobalErrorHandlers = () => {
     // Native Exception Handler
     setNativeExceptionHandler(
         (exceptionString) => {
+            // Always print native exception to console
+            console.error('Global Native Exception:', exceptionString);
             // This is called when native code throws an exception
             const error = new Error(`Native Exception: ${exceptionString}`);
             reportError(error, { isFatal: true });
