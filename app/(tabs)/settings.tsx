@@ -1,14 +1,18 @@
 import { View, Text, StyleSheet } from "react-native";
 import ClipboardDemo from "@/components/ClipboardDemo";
+import CustomHeader from "@/components/CustomHeader";
 
 export default function SimplePage() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>My Header</Text>
-      <Text style={styles.text}>
-        This is some example text to show a plain page component.
-      </Text>
-      <ClipboardDemo />
+    <View style={{ flex: 1 }}>
+      <CustomHeader title="Settings" />
+      <View style={styles.container}>
+        <Text style={styles.header}>My Header</Text>
+        <Text style={styles.text}>
+          This is some example text to show a plain page component.
+        </Text>
+        <ClipboardDemo />
+      </View>
     </View>
   );
 }
