@@ -1,237 +1,316 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  ScrollView,
-  Linking,
-  RefreshControl,
-} from "react-native";
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, Linking, RefreshControl } from 'react-native';
+import CustomHeader from '@/components/CustomHeader';
 
-export default function PaginatedPostsCards() {
-  const [posts, setPosts] = useState([]);
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(10); // Customize page size here
-  const [totalCount, setTotalCount] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false); // Add refreshing state
-  const [error, setError] = useState<string | null>(null);
+// Define types for Job and related data
+interface Company {
+    id: number;
+    name: string;
+}
 
-  const totalPages = Math.ceil(totalCount / pageSize);
+interface JobTag {
+    id: number;
+    tag: {
+        id: number;
+        name: string;
+    };
+}
 
-  const fetchPosts = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+interface JobMetadata {
+    id: number;
+    name: string;
+    value: string;
+}
 
-      const response = await fetch(
-        `https://new.codebuilder.org/api/reddit/posts?page=${page}&pageSize=${pageSize}`
-      );
-      if (!response.ok) {
-        throw new Error(`Error: ${response.statusText}`);
-      }
-      const data = await response.json();
+interface JobSource {
+    id: number;
+    source: string;
+    externalId?: string;
+    rawUrl?: string;
+}
 
-      setPosts(data.data || []);
-      setTotalCount(data.totalCount || 0);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "An unknown error occurred"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+interface Job {
+    id: number;
+    title: string;
+    company?: Company;
+    author?: string;
+    location?: string;
+    url: string;
+    postedAt?: string;
+    description?: string;
+    isRemote?: boolean;
+    createdAt: string;
+    updatedAt: string;
+    tags: JobTag[];
+    metadata: JobMetadata[];
+    sources: JobSource[];
+}
 
-  const handleRefresh = async () => {
-    try {
-      setRefreshing(true);
-      setPage(1); // Reset to the first page when refreshing
-      await fetchPosts();
-    } finally {
-      setRefreshing(false);
-    }
-  };
+export default function JobsListView() {
+    const [jobs, setJobs] = useState<Job[]>([]);
+    const [page, setPage] = useState(1);
+    const [pageSize] = useState(10);
+    const [totalCount, setTotalCount] = useState(0);
+    const [loading, setLoading] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchPosts();
-  }, [page]);
+    const totalPages = Math.ceil(totalCount / pageSize);
 
-  const handleNextPage = () => {
-    if (page < totalPages) {
-      setPage((prev) => prev + 1);
-    }
-  };
+    const fetchJobs = async () => {
+        try {
+            setLoading(true);
+            setError(null);
 
-  const handlePrevPage = () => {
-    if (page > 1) {
-      setPage((prev) => prev - 1);
-    }
-  };
+            // Calculate skip value based on page
+            const skipValue = (page - 1) * pageSize;
 
-  const handleOpenURL = (url: string) => {
-    if (url) {
-      Linking.openURL(url).catch((err) =>
-        console.error("Failed to open URL:", err)
-      );
-    }
-  };
+            // Log API request for debugging
+            console.log(`Fetching jobs with: skip=${skipValue}, first=${pageSize}, page=${page}`);
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Reddit Posts (Page {page})</Text>
+            // Use the new API endpoint with pagination parameters
+            const response = await fetch(`https://api.codebuilder.org/jobs?skip=${skipValue}&first=${pageSize}`);
 
-      {loading && (
-        <ActivityIndicator
-          size="large"
-          color="#fff"
-          style={{ marginVertical: 10 }}
-        />
-      )}
+            if (!response.ok) {
+                throw new Error(`Error: ${response.statusText}`);
+            }
 
-      {error && <Text style={styles.errorText}>Error: {error}</Text>}
+            const data = await response.json();
 
-      <ScrollView
-        style={styles.scrollContainer}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+            // Log response data for debugging
+            console.log(`Received ${data.jobs?.length || 0} jobs, total: ${data.totalCount || 0}`);
+
+            setJobs(data.jobs || []);
+            setTotalCount(data.totalCount || 0);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'An unknown error occurred');
+        } finally {
+            setLoading(false);
         }
-      >
-        {!loading &&
-          !error &&
-          posts.length > 0 &&
-          posts.map((post: any) => (
-            <TouchableOpacity
-              key={post.id}
-              style={styles.card}
-              activeOpacity={0.8}
-              onPress={() => handleOpenURL(post.url)}
-            >
-              <Text style={styles.cardTitle}>{post.title}</Text>
-              <Text style={styles.cardSubtitle}>by {post.author}</Text>
-              <View style={styles.cardRow}>
-                <Text style={styles.cardLabel}>Subreddit:</Text>
-                <Text style={styles.cardValue}>{post.subreddit}</Text>
-              </View>
-              <View style={styles.cardRow}>
-                <Text style={styles.cardLabel}>Upvotes:</Text>
-                <Text style={styles.cardValue}>{post.upvotes}</Text>
-                <Text style={styles.cardLabel}>Downvotes:</Text>
-                <Text style={styles.cardValue}>{post.downvotes}</Text>
-              </View>
-              <View style={styles.cardRow}>
-                <Text style={styles.cardLabel}>Posted At:</Text>
-                <Text style={styles.cardValue}>
-                  {new Date(post.postedAt).toLocaleString()}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-      </ScrollView>
+    };
 
-      <View style={styles.paginationContainer}>
-        <TouchableOpacity
-          style={[styles.button, page === 1 && styles.disabledButton]}
-          onPress={handlePrevPage}
-          disabled={page === 1}
-        >
-          <Text style={styles.buttonText}>Previous</Text>
-        </TouchableOpacity>
+    const handleRefresh = async () => {
+        try {
+            setRefreshing(true);
+            setPage(1); // Reset to the first page when refreshing
+            await fetchJobs();
+        } finally {
+            setRefreshing(false);
+        }
+    };
 
-        <Text style={styles.pageIndicator}>
-          Page {page} of {totalPages || 1}
-        </Text>
+    // Initialize component
+    useEffect(() => {
+        console.log('Component mounted, fetching initial data');
+        fetchJobs();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Empty dependency array means this only runs once on mount
 
-        <TouchableOpacity
-          style={[styles.button, page === totalPages && styles.disabledButton]}
-          onPress={handleNextPage}
-          disabled={page === totalPages}
-        >
-          <Text style={styles.buttonText}>Next</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+    // Handle page changes
+    useEffect(() => {
+        if (page > 1) {
+            // Skip on initial load (page 1 is already loaded)
+            console.log(`Page changed to ${page}, fetching new data`);
+            fetchJobs();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [page]); // Only run when page changes
+
+    const handleNextPage = () => {
+        if (page < totalPages) {
+            console.log(`Moving to next page: ${page + 1}`);
+            setPage(page + 1); // Use direct value to ensure immediate update
+        }
+    };
+
+    const handlePrevPage = () => {
+        if (page > 1) {
+            console.log(`Moving to previous page: ${page - 1}`);
+            setPage(page - 1); // Use direct value to ensure immediate update
+        }
+    };
+
+    const handleOpenURL = (url: string) => {
+        if (url) {
+            Linking.openURL(url).catch((err) => console.error('Failed to open URL:', err));
+        }
+    };
+
+    // Helper function to get job metadata value by name
+    const getMetadataValue = (job: Job, name: string): string | null => {
+        const metadata = job.metadata.find((m) => m.name === name);
+        return metadata ? metadata.value : null;
+    };
+
+    // Helper function to get job source
+    const getJobSource = (job: Job): string => {
+        if (job.sources && job.sources.length > 0) {
+            return job.sources[0].source;
+        }
+        return 'Unknown';
+    };
+
+    return (
+        <View style={{ flex: 1 }}>
+            <CustomHeader title="Jobs" />
+            <View style={styles.container}>
+                <Text style={styles.title}>Jobs (Page {page})</Text>
+
+                {loading && <ActivityIndicator size="large" color="#fff" style={{ marginVertical: 10 }} />}
+
+                {error && <Text style={styles.errorText}>Error: {error}</Text>}
+
+                <ScrollView style={styles.scrollContainer} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}>
+                    {!loading &&
+                        !error &&
+                        jobs.length > 0 &&
+                        jobs.map((job) => (
+                            <TouchableOpacity key={job.id} style={styles.card} activeOpacity={0.8} onPress={() => handleOpenURL(job.url)}>
+                                <Text style={styles.cardTitle}>{job.title}</Text>
+
+                                <View style={styles.cardRow}>
+                                    <Text style={styles.cardLabel}>Company:</Text>
+                                    <Text style={styles.cardValue}>{job.company?.name || 'Unknown'}</Text>
+                                </View>
+
+                                {job.author && (
+                                    <View style={styles.cardRow}>
+                                        <Text style={styles.cardLabel}>Posted by:</Text>
+                                        <Text style={styles.cardValue}>{job.author}</Text>
+                                    </View>
+                                )}
+
+                                {job.location && (
+                                    <View style={styles.cardRow}>
+                                        <Text style={styles.cardLabel}>Location:</Text>
+                                        <Text style={styles.cardValue}>{job.location}</Text>
+                                    </View>
+                                )}
+
+                                <View style={styles.cardRow}>
+                                    <Text style={styles.cardLabel}>Remote:</Text>
+                                    <Text style={styles.cardValue}>{job.isRemote ? 'Yes' : 'No'}</Text>
+                                </View>
+
+                                {job.tags.length > 0 && (
+                                    <View style={styles.cardRow}>
+                                        <Text style={styles.cardLabel}>Skills:</Text>
+                                        <Text style={styles.cardValue}>{job.tags.map((tag) => tag.tag.name).join(', ')}</Text>
+                                    </View>
+                                )}
+
+                                <View style={styles.cardRow}>
+                                    <Text style={styles.cardLabel}>Source:</Text>
+                                    <Text style={styles.cardValue}>{getJobSource(job)}</Text>
+                                </View>
+
+                                <View style={styles.cardRow}>
+                                    <Text style={styles.cardLabel}>Posted At:</Text>
+                                    <Text style={styles.cardValue}>{job.postedAt ? new Date(job.postedAt).toLocaleString() : 'Unknown'}</Text>
+                                </View>
+                            </TouchableOpacity>
+                        ))}
+
+                    {!loading && !error && jobs.length === 0 && <Text style={styles.noJobsText}>No jobs found</Text>}
+                </ScrollView>
+
+                <View style={styles.paginationContainer}>
+                    <TouchableOpacity style={[styles.button, page === 1 && styles.disabledButton]} onPress={handlePrevPage} disabled={page === 1}>
+                        <Text style={styles.buttonText}>Previous</Text>
+                    </TouchableOpacity>
+
+                    <Text style={styles.pageIndicator}>
+                        Page {page} of {totalPages || 1}
+                    </Text>
+
+                    <TouchableOpacity style={[styles.button, page === totalPages && styles.disabledButton]} onPress={handleNextPage} disabled={page === totalPages}>
+                        <Text style={styles.buttonText}>Next</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </View>
+    );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: 5,
-    paddingHorizontal: 16,
-    backgroundColor: "#121212",
-  },
-  scrollContainer: {
-    marginTop: 10,
-  },
-  title: {
-    fontSize: 20,
-    marginBottom: 10,
-    fontWeight: "bold",
-    alignSelf: "center",
-    color: "#fff",
-  },
-  errorText: {
-    color: "#ff4444",
-    marginVertical: 10,
-  },
-  card: {
-    backgroundColor: "#1F1F1F",
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 10,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 4,
-  },
-  cardSubtitle: {
-    fontSize: 14,
-    color: "#ccc",
-    marginBottom: 8,
-  },
-  cardRow: {
-    flexDirection: "row",
-    marginBottom: 4,
-    alignItems: "center",
-  },
-  cardLabel: {
-    marginRight: 4,
-    color: "#ccc",
-    fontSize: 14,
-  },
-  cardValue: {
-    marginRight: 12,
-    color: "#fff",
-    fontSize: 14,
-  },
-  paginationContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginVertical: 10,
-  },
-  button: {
-    backgroundColor: "#007AFF",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-    marginHorizontal: 5,
-  },
-  disabledButton: {
-    backgroundColor: "#555",
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "600",
-  },
-  pageIndicator: {
-    fontSize: 16,
-    marginHorizontal: 10,
-    color: "#fff",
-  },
+    container: {
+        flex: 1,
+        paddingTop: 5,
+        paddingHorizontal: 16,
+        backgroundColor: '#121212',
+    },
+    scrollContainer: {
+        marginTop: 10,
+    },
+    title: {
+        fontSize: 20,
+        marginBottom: 10,
+        fontWeight: 'bold',
+        alignSelf: 'center',
+        color: '#fff',
+    },
+    errorText: {
+        color: '#ff4444',
+        marginVertical: 10,
+    },
+    noJobsText: {
+        color: '#fff',
+        textAlign: 'center',
+        marginTop: 20,
+        fontSize: 16,
+    },
+    card: {
+        backgroundColor: '#1F1F1F',
+        borderRadius: 8,
+        padding: 16,
+        marginBottom: 10,
+    },
+    cardTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#fff',
+        marginBottom: 8,
+    },
+    cardRow: {
+        flexDirection: 'row',
+        marginBottom: 4,
+        alignItems: 'center',
+        flexWrap: 'wrap',
+    },
+    cardLabel: {
+        marginRight: 4,
+        color: '#ccc',
+        fontSize: 14,
+    },
+    cardValue: {
+        marginRight: 12,
+        color: '#fff',
+        fontSize: 14,
+        flex: 1,
+    },
+    paginationContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginVertical: 10,
+    },
+    button: {
+        backgroundColor: '#007AFF',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 6,
+        marginHorizontal: 5,
+    },
+    disabledButton: {
+        backgroundColor: '#555',
+    },
+    buttonText: {
+        color: '#fff',
+        fontWeight: '600',
+    },
+    pageIndicator: {
+        fontSize: 16,
+        marginHorizontal: 10,
+        color: '#fff',
+    },
 });
