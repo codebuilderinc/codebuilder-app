@@ -1,6 +1,6 @@
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+const fs = require("fs");
+const path = require("path");
+const { execSync, execFileSync } = require("child_process");
 
 // Configuration file path
 const CONFIG_FILE = path.join(__dirname, 'build-config.json');
@@ -51,19 +51,19 @@ function runBuildScripts() {
 
         console.log(`▶️ Running: ${scriptPath}`);
 
-        try {
-            if (scriptPath.endsWith('.ts')) {
-                // For TypeScript files, use ts-node
-                execSync(`npx ts-node ${fullPath}`, { stdio: 'inherit' });
-            } else {
-                // For JavaScript files, use node
-                execSync(`node ${fullPath}`, { stdio: 'inherit' });
-            }
-            console.log(`✅ Completed: ${scriptPath}`);
-        } catch (error) {
-            console.error(`❌ Error running ${scriptPath}:`, error.message);
-        }
-    });
+    try {
+      if (scriptPath.endsWith(".ts")) {
+        // For TypeScript files, use ts-node
+        execFileSync("npx", ["ts-node", fullPath], { stdio: "inherit" });
+      } else {
+        // For JavaScript files, use node
+        execFileSync("node", [fullPath], { stdio: "inherit" });
+      }
+      console.log(`✅ Completed: ${scriptPath}`);
+    } catch (error) {
+      console.error(`❌ Error running ${scriptPath}:`, error.message);
+    }
+  });
 
     console.log('✨ Build scripts completed');
 }
