@@ -81,7 +81,7 @@ module.exports = {
             },
             package: 'com.digitalnomad91.codebuilderadmin',
             permissions: ['NOTIFICATIONS', 'POST_NOTIFICATIONS', 'READ_PHONE_STATE'],
-            googleServicesFile: './google-services.json',
+            googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
             useNextNotificationsApi: true,
             notification: {
                 icon: './assets/images/icon.png',
