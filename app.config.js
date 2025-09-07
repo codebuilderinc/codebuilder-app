@@ -8,6 +8,8 @@ import fs from 'fs';
 // Explicitly load the .env file
 dotenv.config();
 
+console.log('process.env.GOOGLE_SERVICES_JSON:', process.env.GOOGLE_SERVICES_JSON);
+
 // Add this new plugin
 const withIOSSounds = (config) => {
     return withXcodeProject(config, async (cfg) => {
@@ -79,7 +81,7 @@ module.exports = {
             },
             package: 'com.digitalnomad91.codebuilderadmin',
             permissions: ['NOTIFICATIONS', 'POST_NOTIFICATIONS', 'READ_PHONE_STATE'],
-            googleServicesFile: './google-services.json',
+            googleServicesFile: process.env.GOOGLE_SERVICES_JSON, //'./google-services.json',
             useNextNotificationsApi: true,
             notification: {
                 icon: './assets/images/icon.png',
