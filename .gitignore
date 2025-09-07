@@ -37,10 +37,10 @@ yarn-error.*
 *.tsbuildinfo
 
 # Ignore the android google services config
-./google-services.json
+google-services.json
 
 # Ignore the iOS Google Services config
-./GoogleService-Info.plist
+GoogleService-Info.plist
 
 # You can also ignore any .env files or other secrets
 *.env
