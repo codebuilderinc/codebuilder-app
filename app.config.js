@@ -64,7 +64,7 @@ module.exports = {
             buildNumber: versionData.iosBuildNumber, // Using iOS build number from version.json
             supportsTablet: true,
             bundleIdentifier: 'com.digitalnomad91.codebuilderadmin',
-            googleServicesFile: './GoogleService-Info.plist',
+            googleServicesFile: process.env.GOOGLE_SERVICE_INFO_PLIST ?? './GoogleService-Info.plist',
             entitlements: {
                 'aps-environment': 'production',
             },
