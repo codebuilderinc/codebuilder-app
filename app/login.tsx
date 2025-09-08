@@ -69,10 +69,10 @@ function LoginScreenContent() {
 
             // Simple configuration with minimal logging to prevent recursion
             try {
-                const webClientId =
-                    Constants.expoConfig?.extra?.googleWebClientId ||
-                    // Expo public envs are embedded at bundle-time
-                    (process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID as string | undefined);
+                // Use different client IDs for debug vs production
+                const webClientId = __DEV__ 
+                    ? Constants.expoConfig?.extra?.googleWebClientIdDev || Constants.expoConfig?.extra?.googleWebClientId
+                    : Constants.expoConfig?.extra?.googleWebClientId;
 
                 if (!webClientId) {
                     console.warn('🟡 Google Web Client ID is missing. Falling back to no offline access.');
@@ -82,7 +82,8 @@ function LoginScreenContent() {
                     return;
                 }
 
-                console.log('🟢 Configuring Google Sign-In with client ID:', webClientId);
+                console.log('🟢 Configuring Google Sign-In with client ID:', webClientId.substring(0, 20) + '...');
+                console.log('📱 Build type:', __DEV__ ? 'DEBUG' : 'PRODUCTION');
 
                 // Configure Google Sign-In
                 GoogleSignin.configure({
@@ -107,17 +108,72 @@ function LoginScreenContent() {
     const signIn = async () => {
         try {
             console.log('🟢 Starting Google sign in process...');
+            console.log('📱 Build type:', __DEV__ ? 'DEBUG' : 'PRODUCTION');
+            console.log('📦 Package name:', Constants.expoConfig?.android?.package);
 
             // Check if Google Play Services are available
             console.log('🟢 Checking Google Play Services...');
             await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
             console.log('✅ Google Play Services available');
 
-            // Attempt to sign in
+            // Log current configuration
+            console.log('🔧 Current GoogleSignin configuration complete');
+
+            // Enhanced sign-in with better error detection
             console.log('🟢 Initiating Google Sign-In...');
+            
+            // Check if user has previously signed in
+            const hasPreviousSignIn = GoogleSignin.hasPreviousSignIn();
+            console.log('� Has previous sign-in:', hasPreviousSignIn);
+            
+            // Get current user if available
+            const currentUser = GoogleSignin.getCurrentUser();
+            console.log('👤 Current user:', currentUser ? 'Found' : 'Not found');
+            
+            // If there's a current user, try to clear session first
+            if (currentUser) {
+                try {
+                    console.log('� Clearing existing Google session...');
+                    await GoogleSignin.signOut();
+                    console.log('✅ Previous session cleared');
+                } catch (clearError: any) {
+                    console.log('⚠️ Could not clear session:', clearError?.message);
+                }
+            }
 
             // Perform the sign-in
-            const signInResult = await GoogleSignin.signIn();
+            console.log('🚀 Calling GoogleSignin.signIn()...');
+            
+            let signInResult;
+            try {
+                signInResult = await GoogleSignin.signIn();
+                console.log('✅ GoogleSignin.signIn() completed successfully');
+                console.log('📋 Raw signInResult type:', typeof signInResult);
+                console.log('📋 Raw signInResult keys:', signInResult ? Object.keys(signInResult) : 'null/undefined');
+            } catch (signInError: any) {
+                // Log the specific error from GoogleSignin
+                console.error('🔴 GoogleSignin.signIn() threw an error:', {
+                    code: signInError?.code,
+                    message: signInError?.message,
+                    statusCode: signInError?.statusCode,
+                    statusCodes: signInError?.statusCodes,
+                    error: signInError
+                });
+
+                // Handle specific error codes
+                if (signInError?.code === 'SIGN_IN_CANCELLED') {
+                    console.log('ℹ️ User cancelled sign-in');
+                    return; // Don't show error for user cancellation
+                } else if (signInError?.code === 'IN_PROGRESS') {
+                    console.log('⏳ Sign-in already in progress');
+                    return;
+                } else if (signInError?.code === 'PLAY_SERVICES_NOT_AVAILABLE') {
+                    throw new Error('Google Play Services not available');
+                } else {
+                    // Re-throw the specific error
+                    throw signInError;
+                }
+            }
 
             // The structure from Expo's implementation is different - data is nested
             // Expo adds a wrapper with { type: 'success', data: { actual response } }
@@ -127,15 +183,23 @@ function LoginScreenContent() {
             let userData;
             let idToken;
 
+            console.log('🔍 Attempting to extract user data and token...');
+
             if (signInResult?.type === 'success' && signInResult?.data) {
                 // Expo structure
+                console.log('📋 Using Expo structure');
                 userData = signInResult.data.user;
                 idToken = signInResult.data.idToken;
             } else {
                 // Regular structure
+                console.log('📋 Using regular structure');
                 userData = signInResult?.user;
                 idToken = signInResult?.idToken;
             }
+
+            console.log('👤 Extracted userData:', userData ? 'Found' : 'Missing');
+            console.log('🔑 Extracted idToken:', idToken ? 'Found' : 'Missing');
+            console.log('📧 User email:', userData?.email);
 
             if (userData && idToken) {
                 console.log('✅ Google Sign-In successful:', userData.email);
@@ -160,7 +224,10 @@ function LoginScreenContent() {
                     const response = await fetch('https://api.codebuilder.org/auth/google', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ idToken }),
+                        body: JSON.stringify({ 
+                            idToken,
+                            buildType: __DEV__ ? 'development' : 'production'
+                        }),
                     });
 
                     console.log('✅ Auth API response received:', response.status);
@@ -222,6 +289,46 @@ function LoginScreenContent() {
                 });
             }
         } catch (e: any) {
+            // Enhanced error logging
+            console.error('🔴 Google sign in error details:', {
+                name: e?.name,
+                code: e?.code,
+                message: e?.message,
+                statusCode: e?.statusCode,
+                statusCodes: e?.statusCodes,
+                stack: e?.stack,
+                fullError: e
+            });
+
+            // More specific error handling based on common issues
+            let userFriendlyMessage = 'Failed to sign in with Google';
+            let diagnosticInfo = '';
+
+            if (e?.code === '12500' || e?.statusCode === 12500) {
+                // API_NOT_CONNECTED - common with SHA-1 mismatch
+                diagnosticInfo = 'API_NOT_CONNECTED: This usually indicates SHA-1 fingerprint mismatch or OAuth client misconfiguration.';
+                userFriendlyMessage = 'Google Sign-In configuration error. Please check your OAuth setup.';
+            } else if (e?.code === '10' || e?.statusCode === 10) {
+                // DEVELOPER_ERROR - wrong configuration
+                diagnosticInfo = 'DEVELOPER_ERROR: OAuth client configuration is incorrect.';
+                userFriendlyMessage = 'Google Sign-In setup error. Please verify your OAuth client configuration.';
+            } else if (e?.code === '12501' || e?.statusCode === 12501) {
+                // SIGN_IN_CANCELLED by user
+                console.log('ℹ️ User cancelled sign-in');
+                return; // Don't show error notification
+            } else if (e?.code === '7' || e?.statusCode === 7) {
+                // NETWORK_ERROR
+                diagnosticInfo = 'NETWORK_ERROR: Check your internet connection.';
+                userFriendlyMessage = 'Network error. Please check your internet connection and try again.';
+            } else if (e?.message?.includes('SIGN_IN_TIMEOUT')) {
+                diagnosticInfo = 'SIGN_IN_TIMEOUT: This usually indicates SHA-1 fingerprint mismatch in production builds.';
+                userFriendlyMessage = 'Sign-in timed out. This usually indicates a configuration issue.';
+            }
+
+            if (diagnosticInfo) {
+                console.error('🔍 DIAGNOSIS:', diagnosticInfo);
+            }
+
             // Log error info for troubleshooting
             const code = e?.code || e?.statusCodes || 'UNKNOWN';
             const message = e?.message || 'No error message available';
@@ -232,7 +339,7 @@ function LoginScreenContent() {
             notify({
                 type: 'error',
                 title: 'Google Sign-In Failed',
-                message: message || 'Failed to sign in with Google',
+                message: userFriendlyMessage,
             });
         }
     };
