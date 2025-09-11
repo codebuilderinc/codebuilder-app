@@ -16,11 +16,12 @@ try {
 
 export const BACKGROUND_TASK_IDENTIFIER = 'background-fetch-task'; // legacy id retained
 
-let taskDefined = false;
+// Track definition across Fast Refresh cycles
+let taskDefined = (globalThis as any).__CODEBUILDER_BACKGROUND_TASK_DEFINED__ === true;
 function defineBackgroundTask() {
     if (taskDefined) return;
     try {
-        TaskManager.defineTask(BACKGROUND_TASK_IDENTIFIER, async () => {
+    const handler = async () => {
             try {
                 const startedAt = new Date().toISOString();
                 console.log('[BackgroundTask] Started', startedAt);
@@ -48,8 +49,21 @@ function defineBackgroundTask() {
                 console.error('[BackgroundTask] Failed', error);
                 return BackgroundTask.BackgroundTaskResult.Failed;
             }
-        });
+        };
+        // Prefer TaskManager; some libs might also expose a define API
+        if (typeof (BackgroundTask as any).defineTask === 'function') {
+            try {
+                (BackgroundTask as any).defineTask(BACKGROUND_TASK_IDENTIFIER, handler);
+            } catch (btErr: any) {
+                const m = btErr?.message || '';
+                if (!/already defined/i.test(m)) {
+                    console.warn('[BackgroundTask] BackgroundTask.defineTask failed, falling back to TaskManager.defineTask', m);
+                }
+            }
+        }
+        TaskManager.defineTask(BACKGROUND_TASK_IDENTIFIER, handler);
         taskDefined = true;
+        (globalThis as any).__CODEBUILDER_BACKGROUND_TASK_DEFINED__ = true;
         console.log('[BackgroundTask] Task definition ensured');
     } catch (e) {
         // If already defined, ignore; otherwise log
@@ -58,6 +72,7 @@ function defineBackgroundTask() {
             console.warn('[BackgroundTask] defineTask error', msg);
         } else {
             taskDefined = true; // treat as defined
+            (globalThis as any).__CODEBUILDER_BACKGROUND_TASK_DEFINED__ = true;
         }
     }
 }
@@ -73,6 +88,8 @@ export async function registerBackgroundFetch(minimumIntervalMinutes: number = 1
     try {
         // Double-ensure task is defined before registering
         defineBackgroundTask();
+    // Small delay to let task registry settle (helps with Fast Refresh race conditions)
+    await new Promise(res => setTimeout(res, 25));
         const status = await BackgroundTask.getStatusAsync();
         if (status !== BackgroundTask.BackgroundTaskStatus.Available) {
             console.warn('[BackgroundTask] Not available, status=', status);
@@ -90,6 +107,7 @@ export async function registerBackgroundFetch(minimumIntervalMinutes: number = 1
             console.log('[BackgroundTask] Retrying after ensure definition...');
             try {
                 defineBackgroundTask();
+        await new Promise(res => setTimeout(res, 100));
                 await BackgroundTask.registerTaskAsync(BACKGROUND_TASK_IDENTIFIER, {
                     minimumInterval: Math.max(15, minimumIntervalMinutes),
                 });
