@@ -131,7 +131,7 @@ export const handleBackgroundNotifications = () => {
 export const savePushToken = async (token: string): Promise<void> => {
   try {
     const response = await fetch(
-      "https://new.codebuilder.org/api/notifications/subscribe",
+      "https://api.codebuilder.org/notifications/subscribe",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

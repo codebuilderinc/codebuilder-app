@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Text, SafeAreaView, Image, ScrollView } from 'react-native';
+import { View, StyleSheet, Text, SafeAreaView, Image, ScrollView, Pressable } from 'react-native';
 import { GoogleSignin, GoogleSigninButton } from '@react-native-google-signin/google-signin';
 import Constants from 'expo-constants';
 import { useAuth } from '@/hooks/useAuth';
+import { useSession } from '@/providers/SessionProvider';
 import { notify } from '@/services/notifier.service';
+import { router } from 'expo-router';
 
 export default function LoginScreen() {
     // Add state for tracking rendering and errors
@@ -23,7 +25,7 @@ export default function LoginScreen() {
     // If we can't even render this basic UI, there's a serious problem elsewhere
     if (isRendering) {
         return (
-            <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
                 <Text>Loading login screen...</Text>
             </SafeAreaView>
         );
@@ -31,7 +33,7 @@ export default function LoginScreen() {
 
     if (renderError) {
         return (
-            <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
                 <Text style={{ color: 'red' }}>Error rendering login: {renderError}</Text>
             </SafeAreaView>
         );
@@ -43,7 +45,7 @@ export default function LoginScreen() {
     } catch (err: any) {
         console.error('❌ Error rendering LoginScreenContent:', err?.message || String(err));
         return (
-            <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
                 <Text style={{ color: 'red' }}>Failed to render login screen</Text>
                 <Text>{err?.message || String(err)}</Text>
             </SafeAreaView>
@@ -54,6 +56,7 @@ export default function LoginScreen() {
 // Separate the complex logic into its own component
 function LoginScreenContent() {
     const { user, setUser } = useAuth();
+    const { updateAfterLogin } = useSession();
     // Flag to track if we've already configured GoogleSignin
     const hasConfiguredRef = useRef(false);
 
@@ -217,6 +220,17 @@ function LoginScreenContent() {
                         givenName: userData.givenName,
                     },
                 });
+                updateAfterLogin({
+                    idToken,
+                    profile: {
+                        id: userData.id,
+                        name: userData.name,
+                        email: userData.email,
+                        photo: userData.photo,
+                        familyName: userData.familyName,
+                        givenName: userData.givenName,
+                    },
+                });
 
                 // Make the API call
                 console.log('🟢 Making network request to auth API...');
@@ -261,6 +275,19 @@ function LoginScreenContent() {
                             accessToken: responseData.accessToken,
                             refreshToken: responseData.refreshToken,
                         }));
+                        updateAfterLogin({
+                            idToken,
+                            profile: {
+                                id: userData.id,
+                                name: userData.name,
+                                email: userData.email,
+                                photo: userData.photo,
+                                familyName: userData.familyName,
+                                givenName: userData.givenName,
+                            },
+                            accessToken: responseData.accessToken,
+                            refreshToken: responseData.refreshToken,
+                        });
 
                         // Show success notification
                         notify({
@@ -392,7 +419,12 @@ function LoginScreenContent() {
         return (
             <View style={styles.container}>
                 <Text style={styles.title}>Login</Text>
-                <GoogleSigninButton onPress={signIn} size={GoogleSigninButton.Size.Wide} color={GoogleSigninButton.Color.Dark} style={{ marginBottom: 16 }} />
+                <View style={styles.row}>
+                    <GoogleSigninButton onPress={signIn} size={GoogleSigninButton.Size.Standard} color={GoogleSigninButton.Color.Dark} style={{ marginBottom: 16 }} />
+                    <Pressable style={styles.debugButton} onPress={() => router.push('/debug' as any)} hitSlop={8}>
+                        <Text style={styles.debugButtonText}>Debug</Text>
+                    </Pressable>
+                </View>
             </View>
         );
     }
@@ -454,17 +486,20 @@ function LoginScreenContent() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16 },
-    title: { fontSize: 24, fontWeight: '600', marginBottom: 16 },
+    container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16, backgroundColor: '#000' },
+    title: { fontSize: 24, fontWeight: '600', marginBottom: 16, color: '#fff' },
+    row: { flexDirection: 'row', alignItems: 'center' },
     profileImage: {
         width: 100,
         height: 100,
         borderRadius: 50,
         marginBottom: 20,
     },
+    debugButton: { marginLeft: 12, backgroundColor: '#333', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 6, justifyContent: 'center' },
+    debugButtonText: { color: '#fff', fontWeight: '600' },
     infoContainer: {
         width: '100%',
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#111',
         padding: 16,
         borderRadius: 8,
         marginBottom: 20,
@@ -472,19 +507,20 @@ const styles = StyleSheet.create({
     label: {
         fontWeight: '600',
         marginBottom: 4,
-        color: '#555',
+        color: '#ccc',
     },
     value: {
         marginBottom: 16,
         fontSize: 16,
+        color: '#fff',
     },
     statusBadge: {
-        color: '#2e7d32',
+        color: '#4caf50',
         fontWeight: '600',
     },
     tokenInfo: {
         width: '100%',
-        backgroundColor: '#e8f5e9',
+        backgroundColor: '#1a2d1a',
         padding: 16,
         borderRadius: 8,
         marginBottom: 20,
@@ -492,13 +528,13 @@ const styles = StyleSheet.create({
     tokenLabel: {
         fontWeight: '600',
         marginBottom: 4,
-        color: '#2e7d32',
+        color: '#66bb6a',
     },
     tokenValue: {
         marginBottom: 16,
         fontSize: 14,
         fontFamily: 'monospace',
-        color: '#1b5e20',
+        color: '#c8e6c9',
     },
     buttonContainer: {
         flexDirection: 'row',
