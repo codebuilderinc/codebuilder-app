@@ -16,7 +16,7 @@ export interface ErrorReport {
     options?: ReportOptions;
 }
 
-const ERROR_REPORTING_ENDPOINT = 'https://new.codebuilder.org/api/errors';
+const ERROR_REPORTING_ENDPOINT = 'https://api.codebuilder.org/errors';
 
 // Circuit breaker implementation
 const circuitBreaker = {

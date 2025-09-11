@@ -1,5 +1,10 @@
 import * as LocationLibrary from "expo-location";
-import { getFcmToken } from "../hooks/usePushNotifications";
+
+const tsLog = (...args: any[]) => {
+  const ts = new Date().toISOString();
+  // eslint-disable-next-line no-console
+  console.log('[location][' + ts + ']', ...args);
+};
 
 /**
  * Request location permissions.
@@ -57,21 +62,26 @@ export const saveLocation = async (
   geoAddress: LocationLibrary.LocationGeocodedAddress,
   token: string | null
 ): Promise<void> => {
-  if (!token) {
-    console.log("No FCM token available; skipping save location.");
+  // Token now solely managed by SessionProvider; do not attempt legacy global fallback
+  let effectiveToken = token;
+
+  if (!effectiveToken) {
+    tsLog(
+      "No FCM token available; skipping save location.",
+      { passedTokenNull: !token }
+    );
     return;
   }
-
-  console.log("Saving location to server...", token);
+  tsLog("Saving location to server", { tokenTail: effectiveToken.slice(-8) });
 
   try {
     const payload = {
-      subscriptionId: token,
+      subscriptionId: effectiveToken,
       latitude: location.coords.latitude,
       longitude: location.coords.longitude,
     };
 
-    const response = await fetch("https://new.codebuilder.org/api/location", {
+    const response = await fetch("https://api.codebuilder.org/location", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -87,8 +97,8 @@ export const saveLocation = async (
       );
     }
 
-    console.log("Location and address saved to server successfully.");
+  tsLog("Location saved successfully");
   } catch (error: any) {
-    console.error("Error saving location to server:", error?.message || error);
+  tsLog("Error saving location to server", error?.message || error);
   }
 };

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSession } from '@/providers/SessionProvider';
 import * as LocationLibrary from "expo-location";
 import {
   requestLocationPermission,
@@ -20,6 +21,12 @@ export const useLocation = (fcmToken: string | null) => {
     try {
       setLoading(true);
 
+      if (!fcmToken) {
+        console.log(
+          "fetchLocation invoked without an FCM token; aborting location save step."
+        );
+      }
+
       const hasPermission = await requestLocationPermission();
       if (!hasPermission) {
         setError("Permission to access location was denied.");
@@ -36,7 +43,9 @@ export const useLocation = (fcmToken: string | null) => {
         setAddress(geoAddress);
 
         if (geoAddress) {
-          await saveLocation(currentLocation, geoAddress, fcmToken); // Pass fcmToken
+          await saveLocation(currentLocation, geoAddress, fcmToken); // Pass fcmToken (may be null; saveLocation will re-check)
+        } else {
+          console.log("Geo address unavailable; skipping saveLocation.");
         }
       }
     } catch (e) {
@@ -47,11 +56,20 @@ export const useLocation = (fcmToken: string | null) => {
     }
   };
 
+  const { waitForFcmToken } = useSession();
+
   useEffect(() => {
-    if (fcmToken) {
-      fetchLocation();
-    }
-  }, [fcmToken]); // Trigger fetch when token changes
+    let cancelled = false;
+    (async () => {
+      const token = fcmToken || (await waitForFcmToken());
+      if (!cancelled && token) {
+        fetchLocation();
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [fcmToken, waitForFcmToken]);
 
   return { location, address, error, loading, fetchLocation };
 };

@@ -15,9 +15,9 @@ export default function LocationComponent() {
     const textColor = '#ffffff';
 
     return (
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, backgroundColor: '#000' }}>
             <CustomHeader title="Home" showModalButton={true} />
-            <ScrollView contentContainerStyle={styles.scrollContent}>
+            <ScrollView contentContainerStyle={styles.scrollContent} style={{ flex: 1 }}>
                 <View style={styles.container}>
                     <Image source={require('../../assets/images/icon.png')} style={imgStyles.image} />
 
