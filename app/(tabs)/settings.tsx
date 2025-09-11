@@ -4,7 +4,7 @@ import CustomHeader from "@/components/CustomHeader";
 
 export default function SimplePage() {
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: '#000' }}>
       <CustomHeader title="Settings" />
       <View style={styles.container}>
         <Text style={styles.header}>My Header</Text>

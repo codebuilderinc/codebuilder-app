@@ -8,6 +8,8 @@ import 'react-native-reanimated';
 import { useFonts } from 'expo-font';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 
 import { usePushNotifications, useNotificationObserver } from '@/hooks/usePushNotifications';
 import { useColorScheme } from '@/hooks/useColorScheme';
@@ -17,6 +19,7 @@ import { NotificationProvider } from '@/providers/NotificationProvider';
 
 // ✅ import from providers + hooks (don’t import AuthProvider from hooks)
 import { AuthProvider } from '@/providers/AuthProvider';
+import { SessionProvider } from '@/providers/SessionProvider';
 import { useAuth } from '@/hooks/useAuth';
 
 import { setJSExceptionHandler, setNativeExceptionHandler } from 'react-native-exception-handler';
@@ -63,10 +66,6 @@ setNativeExceptionHandler(nativeExceptionHandler);
 export default function RootLayout() {
     const navigationRef = useNavigationContainerRef();
 
-    // Enable push notifications and observer
-    usePushNotifications();
-    useNotificationObserver();
-
     // Register background fetch task
     useEffect(() => {
         registerBackgroundFetch();
@@ -91,14 +90,30 @@ export default function RootLayout() {
     if (!loaded) return null;
 
     return (
-        <AuthProvider>
-            <RootLayoutNav />
-        </AuthProvider>
+        <SessionProvider>
+            <AuthProvider>
+                <NotificationBootstrap />
+                <RootLayoutNav />
+            </AuthProvider>
+        </SessionProvider>
     );
 }
 
+// Forced dark theme (can be extended later for dynamic theming)
+const ForcedDarkTheme = {
+    ...DarkTheme,
+    colors: {
+        ...DarkTheme.colors,
+        background: '#000000',
+        card: '#000000',
+        text: '#ffffff',
+        border: '#222222',
+        primary: '#ffffff',
+    },
+};
+
 function RootLayoutNav() {
-    const colorScheme = useColorScheme();
+    // const colorScheme = useColorScheme(); // Not used since we force dark
     const { user } = useAuth();
     // Avoid logging during render to prevent side-effects in LogViewer
     useEffect(() => {
@@ -112,13 +127,27 @@ function RootLayoutNav() {
     return (
         <ErrorBoundary>
             <NotificationProvider>
-                <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                    <Stack>
-                        {user ? <Stack.Screen name="(tabs)" options={{ headerShown: false }} /> : <Stack.Screen name="login" options={{ headerShown: false }} />}
-                        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-                    </Stack>
+                <ThemeProvider value={ForcedDarkTheme}>
+                    <View style={{ flex: 1, backgroundColor: '#000' }}>
+                        <StatusBar style="light" backgroundColor="#000" translucent={false} />
+                        <Stack screenOptions={{
+                            contentStyle: { backgroundColor: '#000' },
+                            headerStyle: { backgroundColor: '#000' },
+                        }}>
+                            {user ? <Stack.Screen name="(tabs)" options={{ headerShown: false }} /> : <Stack.Screen name="login" options={{ headerShown: false }} />}
+                            <Stack.Screen name="debug" options={{ title: 'Debug' }} />
+                            <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+                        </Stack>
+                    </View>
                 </ThemeProvider>
             </NotificationProvider>
         </ErrorBoundary>
     );
+}
+
+// Separate component so hooks mount within providers
+function NotificationBootstrap() {
+    usePushNotifications();
+    useNotificationObserver();
+    return null;
 }
