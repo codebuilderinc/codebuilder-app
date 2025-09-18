@@ -7,9 +7,14 @@ const CONFIG_FILE = path.join(__dirname, 'build-config.json');
 
 // Default configuration
 const DEFAULT_CONFIG = {
-    scripts: ['setupBatteryOptimizations.js', 'notificationSounds.ts', 'setupExceptionHandler.js'],
-    // Add enabled: false to disable a script without removing it from the list
-    // Example: { path: "scriptName.js", enabled: false }
+  scripts: [
+    'prepareGoogleServices.js',
+    'setupBatteryOptimization.js',
+    'notificationSounds.js',
+    'setupExceptionHandler.js',
+    'setupScreenRecording.js'
+  ]
+  // You can disable any by: { path: 'setupScreenRecording.js', enabled: false }
 };
 
 // Create default config if it doesn't exist

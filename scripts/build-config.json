@@ -1,7 +1,6 @@
 {
       "scripts": [
-            "setupBatteryOptimizations.js",
-            "notificationSounds.ts",
-            "setupExceptionHandler.js"
+            "prepareGoogleServices.js",
+            { "path": "setupExceptionHandler.js", "enabled": false, "reason": "Replaced by config plugin nativeExceptionHandler.cjs" }
       ]
 }
