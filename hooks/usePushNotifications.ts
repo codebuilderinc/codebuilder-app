@@ -1,52 +1,14 @@
-import { useEffect, useState } from 'react';
-import { handleForegroundNotification, handleBackgroundNotifications, registerForPushNotificationsAsync } from '../utils/notifications.utils';
-//import messaging from "@react-native-firebase/messaging";
+import { useEffect } from 'react';
+import { handleForegroundNotification, handleBackgroundNotifications } from '../utils/notifications.utils';
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
-import { getFirebaseApp } from '@/utils/firebase.utils';
+import { useSession } from '@/providers/SessionProvider';
 
-let globalFcmToken: string | null = null;
 export const usePushNotifications = () => {
-    const [fcmToken, setFcmToken] = useState<string | null>(globalFcmToken);
-
+    const { session } = useSession();
     useEffect(() => {
-        const initializeNotifications = async () => {
-            getFirebaseApp();
-
-            // Register for push notifications and get the push token
-            registerForPushNotificationsAsync().then(async (token) => {
-                if (token) {
-                    console.log('Finished registering for Notifications - FCM Token:', token);
-                    setFcmToken(token); // Store the push token
-                    globalFcmToken = token; // Update the global token
-                }
-            });
-
-            // const hasPermission = await requestPermission();
-            // if (hasPermission) {
-            //   const token = await messaging().getToken();
-            //   console.log("FCM Token:", token);
-
-            //   // Check if the token is already saved globally
-            //   if (token && token !== globalFcmToken) {
-            //     globalFcmToken = token; // Store in a global variable
-            //     setFcmToken(token);
-
-            //     // Save the token to the server
-            //     try {
-            //       await savePushToken(token);
-            //     } catch (error) {
-            //       console.error("Error saving push token:", error);
-            //     }
-            //   }
-            // }
-        };
-
-        initializeNotifications();
-        handleBackgroundNotifications();
         const unsubscribe = handleForegroundNotification();
-
-        // Set a global notification handler
+        handleBackgroundNotifications();
         Notifications.setNotificationHandler({
             handleNotification: async () => ({
                 shouldPlaySound: true,
@@ -55,16 +17,13 @@ export const usePushNotifications = () => {
                 shouldShowList: true,
             }),
         });
-
-        return () => {
-            unsubscribe();
-        };
+        return () => unsubscribe();
     }, []);
-
-    return { fcmToken };
+    return { fcmToken: session.fcmToken };
 };
 
-export const getFcmToken = () => globalFcmToken;
+// Deprecated legacy getter (maintained for compatibility, returns null now)
+// Removed legacy getter entirely to avoid accidental misuse
 
 export const useNotificationObserver = () => {
     useEffect(() => {
