@@ -59,7 +59,12 @@ module.exports = {
         splash: {
             image: './assets/images/splash-icon.png',
             resizeMode: 'contain',
-            backgroundColor: '#ffffff',
+            backgroundColor: '#000000',
+        },
+        androidStatusBar: {
+            barStyle: 'light-content',
+            backgroundColor: '#000000',
+            translucent: false,
         },
         ios: {
             buildNumber: versionData.iosBuildNumber, // Using iOS build number from version.json
