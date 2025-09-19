@@ -38,6 +38,8 @@ yarn-error.*
 
 # Ignore the android google services config
 google-services.json
+google-services.auto.json
+google-services.env.json
 
 # Ignore the iOS Google Services config
 GoogleService-Info.plist
@@ -45,7 +47,10 @@ GoogleService-Info.plist
 # You can also ignore any .env files or other secrets
 *.env
 
-# Android / ioS Build Folders
+# VS Code settings with sensitive data
+.vscode/settings.json
+
+# Android / iOS Build Folders
 android/
 ios/
 web-build/

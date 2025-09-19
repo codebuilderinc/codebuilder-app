@@ -1,0 +1,96 @@
+// const { withDangerousMod, withMainApplication } = require('@expo/config-plugins');
+// const fs = require('fs');
+// const path = require('path');
+
+// // Inject native uncaught handler + CrashTester module with verbose debug logging
+// module.exports = function withNativeExceptionHandler(config) {
+
+//   function resolveAndroidPackage(config) {
+//     return (
+//       config?.android?.package ||
+//       config?.expo?.android?.package ||
+//       process.env.ANDROID_PACKAGE_NAME ||
+//       'com.digitalnomad91.codebuilderadmin'
+//     );
+//   }
+
+//   // Helper: create crash tester native files if absent
+//   function ensureCrashTesterFiles(projectRoot, packageName) {
+//     const packagePath = packageName.replace(/\./g, '/');
+//     const javaDir = path.join(projectRoot, 'android', 'app', 'src', 'main', 'java', packagePath);
+//     if (!fs.existsSync(javaDir)) fs.mkdirSync(javaDir, { recursive: true });
+//     const moduleFile = path.join(javaDir, 'CrashTesterModule.java');
+//     const packageFile = path.join(javaDir, 'CrashTesterPackage.java');
+
+//   const moduleSource = `package ${packageName};\n\nimport com.facebook.react.bridge.ReactApplicationContext;\nimport com.facebook.react.bridge.ReactContextBaseJavaModule;\nimport com.facebook.react.bridge.ReactMethod;\nimport android.util.Log;\nimport android.os.Handler;\nimport android.os.Looper;\n\npublic class CrashTesterModule extends ReactContextBaseJavaModule {\n  public CrashTesterModule(ReactApplicationContext context) { super(context); }\n  @Override public String getName() { return \"CrashTester\"; }\n\n  @ReactMethod public void dumpDefaultHandler() {\n    Thread.UncaughtExceptionHandler h = Thread.getDefaultUncaughtExceptionHandler();\n    if (h == null) {\n      Log.e(\"CrashTester\", \"Default UncaughtExceptionHandler: <null>\");\n    } else {\n      Log.e(\"CrashTester\", \"Default UncaughtExceptionHandler class: \" + h.getClass().getName());\n      Log.e(\"CrashTester\", \"Handler toString(): \" + h.toString());\n    }\n  }\n\n  /** Spawn a new background thread and crash there */\n  @ReactMethod public void induceNativeException() {\n    Log.d(\"CrashTester\", \"induceNativeException() invoked - spawning crash thread\");\n    new Thread(() -> {\n      try { Thread.sleep(750); } catch (InterruptedException ignored) {}\n      Thread.UncaughtExceptionHandler h = Thread.getDefaultUncaughtExceptionHandler();\n      Log.e(\"CrashTester\", \"(crash thread) default handler before throw: \" + (h == null ? \"<null>\" : h.getClass().getName()));\n      Log.e(\"CrashTester\", \"About to throw uncaught exception on thread: \" + Thread.currentThread().getName());\n      throw new RuntimeException(\"CrashTester: induced uncaught thread exception\");\n    }, \"CrashTesterThread\").start();\n  }\n\n  /** Crash on the MAIN (UI) thread */\n  @ReactMethod public void induceMainThreadException() {\n    Log.d(\"CrashTester\", \"induceMainThreadException() posting to main looper\");\n    new Handler(Looper.getMainLooper()).postDelayed(() -> {\n      Thread.UncaughtExceptionHandler h = Thread.getDefaultUncaughtExceptionHandler();\n      Log.e(\"CrashTester\", \"(main thread) default handler before throw: \" + (h == null ? \"<null>\" : h.getClass().getName()));\n      Log.e(\"CrashTester\", \"Throwing on MAIN thread: \" + Thread.currentThread().getName());\n      throw new RuntimeException(\"CrashTester: induced MAIN thread exception\");\n    }, 600);\n  }\n}\n`;
+//     fs.writeFileSync(moduleFile, moduleSource);
+//     console.log('[nativeExceptionHandler] (Re)wrote CrashTesterModule.java');
+
+//     const packageSource = `package ${packageName};\n\nimport com.facebook.react.ReactPackage;\nimport com.facebook.react.bridge.NativeModule;\nimport com.facebook.react.bridge.ReactApplicationContext;\nimport com.facebook.react.uimanager.ViewManager;\nimport java.util.ArrayList;\nimport java.util.Collections;\nimport java.util.List;\n\npublic class CrashTesterPackage implements ReactPackage {\n  @Override\n  public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) { return Collections.emptyList(); }\n  @Override\n  public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {\n    List<NativeModule> modules = new ArrayList<>();\n    modules.add(new CrashTesterModule(reactContext));\n    return modules;\n  }\n}\n`;
+//     if (!fs.existsSync(packageFile) || fs.readFileSync(packageFile, 'utf8') !== packageSource) {
+//       fs.writeFileSync(packageFile, packageSource);
+//       console.log('[nativeExceptionHandler] (Re)wrote CrashTesterPackage.java');
+//     }
+//   }
+
+//   // 2. Create crash tester native module files
+//   config = withDangerousMod(config, ['android', async (cfg) => {
+//     const pkg = resolveAndroidPackage(cfg);
+//     console.log('[nativeExceptionHandler] Ensuring CrashTester sources for', pkg);
+//     ensureCrashTesterFiles(cfg.modRequest.projectRoot, pkg);
+//     return cfg;
+//   }]);
+
+//   // 3. Register CrashTesterPackage in MainApplication
+//   config = withMainApplication(config, (cfg) => {
+//     if (!cfg.modResults || !cfg.modResults.contents) return cfg;
+//     let contents = cfg.modResults.contents;
+//     const pkg = resolveAndroidPackage(cfg);
+//     contents = contents.replace(/\nimport .*CrashTesterPackage.*\s*$/,'');
+
+//     if (!contents.includes(`import ${pkg}.CrashTesterPackage`)) {
+//       const importBlockMatch = contents.match(/(package[\s\S]*?)(import[\s\S]*?)(\nclass\s+MainApplication)/);
+//       if (importBlockMatch) {
+//         const [full, pkgSeg, importsSeg, classSeg] = importBlockMatch;
+//         if (!importsSeg.includes(`import ${pkg}.CrashTesterPackage`)) {
+//           const newImports = importsSeg.trimEnd() + `\nimport ${pkg}.CrashTesterPackage\n`;
+//           contents = contents.replace(full, pkgSeg + newImports + classSeg);
+//           console.log('[nativeExceptionHandler] Added CrashTesterPackage import');
+//         }
+//       } else {
+//         contents = contents.replace(/(package [^\n]+\n)/, `$1import ${pkg}.CrashTesterPackage\n`);
+//         console.log('[nativeExceptionHandler] Fallback import insertion');
+//       }
+//     }
+
+//     if (!contents.includes('CrashTesterPackage()')) {
+//       const javaListRegex = /new PackageList\(this\)\.getPackages\(\);/;
+//       if (javaListRegex.test(contents) && !contents.includes('new CrashTesterPackage()')) {
+//         contents = contents.replace(javaListRegex, 'new PackageList(this).getPackages();\n        packages.add(new CrashTesterPackage());');
+//         console.log('[nativeExceptionHandler] Injected into Java PackageList');
+//       }
+//       const kotlinListRegex = /(val\s+packages\s*=\s*PackageList\(this\)\.packages)/;
+//       if (kotlinListRegex.test(contents) && !/packages\.add\(CrashTesterPackage\(\)\)/.test(contents)) {
+//         contents = contents.replace(kotlinListRegex, '$1\n            packages.add(CrashTesterPackage())');
+//         console.log('[nativeExceptionHandler] Injected into Kotlin packages list');
+//       }
+//       const manualArrayRegex = /(List<ReactPackage> packages = new ArrayList<ReactPackage>\(\);[\s\S]*?return packages;)/;
+//       if (manualArrayRegex.test(contents) && !contents.includes('new CrashTesterPackage()')) {
+//         contents = contents.replace(manualArrayRegex, (block) => block.replace('return packages;', 'packages.add(new CrashTesterPackage());\n        return packages;'));
+//         console.log('[nativeExceptionHandler] Injected into manual array pattern');
+//       }
+//     }
+
+//     if (contents.includes('CrashTesterPackage()')) {
+//       console.log('[nativeExceptionHandler] CrashTesterPackage registration confirmed');
+//     } else {
+//       console.warn('[nativeExceptionHandler] Could not confirm CrashTesterPackage registration');
+//     }
+
+//     cfg.modResults.contents = contents;
+//     return cfg;
+//   });
+
+//   return config;
+// };
+

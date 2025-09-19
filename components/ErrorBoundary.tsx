@@ -1,6 +1,6 @@
 import React, { Component, ReactNode, ErrorInfo } from "react";
 import { View, Text, Button, StyleSheet, ScrollView } from "react-native";
-import { reportError } from "@/services/errorReporting.service";
+import { reportError } from "@/services/errorHandler.service";
 
 interface Props {
   children: ReactNode;
@@ -23,7 +23,7 @@ class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // FIX: Calling reportError with the correct 'options' object.
-    reportError(error, { errorInfo });
+  reportError(error, { componentStack: 'ErrorBoundary', extra: { errorInfo } });
   }
 
   handleResetError = () => {

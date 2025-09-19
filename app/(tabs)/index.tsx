@@ -7,6 +7,7 @@ import BatteryInfo from '@/components/BatteryInfo';
 import { triggerLocalSampleNotification } from '@/utils/notifications.utils';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import CustomHeader from '@/components/CustomHeader';
+import { simulateAsyncGlobalError, triggerNativeTestException } from '@/services/errorHandler.service';
 
 export default function LocationComponent() {
     const { fcmToken } = usePushNotifications();
@@ -79,6 +80,10 @@ export default function LocationComponent() {
 
                     <Button title="Get Location" onPress={fetchLocation} />
                     <Button title="Trigger Sample Notification" onPress={triggerLocalSampleNotification} />
+                    <View style={{ height: 12 }} />
+                    <Button title="JS Crash Test (async)" onPress={() => simulateAsyncGlobalError('Manual JS async crash test')} />
+                    <View style={{ height: 8 }} />
+                    <Button color="#d9534f" title="Native Crash Test" onPress={triggerNativeTestException} />
 
                     {/* Link to Login page */}
                     <View style={{ marginTop: 12 }}>
