@@ -8,7 +8,7 @@ import 'react-native-reanimated';
 import { useFonts } from 'expo-font';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { View } from 'react-native';
+import { View, Button } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
 import { usePushNotifications, useNotificationObserver } from '@/hooks/usePushNotifications';
@@ -22,45 +22,51 @@ import { AuthProvider } from '@/providers/AuthProvider';
 import { SessionProvider } from '@/providers/SessionProvider';
 import { useAuth } from '@/hooks/useAuth';
 
-import { setJSExceptionHandler, setNativeExceptionHandler } from 'react-native-exception-handler';
-import { safeReport } from '@/services/errorReporting.service';
-import { showFatalErrorNotification } from '@/utils/notifications.utils';
+import { setJSExceptionHandler, getJSExceptionHandler, setNativeExceptionHandler } from 'react-native-exception-handler';
+
+// Global error handling is centralized in errorHandler.service
 // ✅ keep pathing consistent with your alias
-import { setupGlobalErrorHandlers } from '@/utils/globalErrorhandler';
+//import { setupGlobalErrorHandlers } from '@/services/errorHandler.service';
 
 // Prevent auto-hiding the splash until fonts are loaded
 SplashScreen.preventAutoHideAsync().catch(() => {
     /* no-op */
 });
 
-// --- Global Exception Handler Setup ---
-const jsExceptionHandler = (maybeError: unknown, isFatal: boolean) => {
-    const error = maybeError instanceof Error ? maybeError : new Error(typeof maybeError === 'string' ? maybeError : JSON.stringify(maybeError) || 'Unknown non-Error thrown');
+// Register global handlers at module load (earlier than any component effects)
+//setupGlobalErrorHandlers({ baseContext: { tags: { entry: 'root-layout' } } });
 
-    console.log('Caught JS Exception:', error, isFatal);
-
-    safeReport(error, {
-        isFatal,
-        errorInfo: { componentStack: 'jsExceptionHandler' },
-    });
-
-    if (isFatal) showFatalErrorNotification(error);
+const exceptionhandler = (error: any, isFatal: boolean) => {
+    console.log('ExceptionHandler called with error: ', error, 'isFatal: ', isFatal);
+    // your error handler function
 };
 
-const nativeExceptionHandler = (exceptionString: string) => {
-    console.log('Caught Native Exception:', exceptionString);
-    const error = new Error(`Native Exception: ${exceptionString}`);
-
-    safeReport(error, {
-        isFatal: true,
-        errorInfo: { componentStack: 'nativeExceptionHandler' },
-    });
-
-    showFatalErrorNotification(error);
+const exceptionhandler2 = (exceptionString: string) => {
+    console.log('Native ExceptionHandler called with exception: ', exceptionString);
+    // your exception handler code here
 };
 
-setJSExceptionHandler(jsExceptionHandler, true);
-setNativeExceptionHandler(nativeExceptionHandler);
+const setNativeExceptionHandlerClick = () => {
+    setNativeExceptionHandler(exceptionhandler2,  false, false);
+    // - exceptionhandler is the exception handler function
+    // - forceAppQuit is an optional ANDROID specific parameter that defines
+    //    if the app should be force quit on error.  default value is true.
+    //    To see usecase check the common issues section.
+    // - executeDefaultHandler is an optional boolean (both IOS, ANDROID)
+    //    It executes previous exception handlers if set by some other module.
+    //    It will come handy when you use any other crash analytics module along with this one
+    //    Default value is set to false. Set to true if you are using other analytics modules.
+};
+
+const setJSExceptionHandlerClick = () => {
+    const originalConsoleError = console.error;
+    setJSExceptionHandler(exceptionhandler, true);
+};
+
+const getJSExceptionHandlerClick = () => {
+    // getJSExceptionHandler gives the currently set JS exception handler
+    const currentHandler = getJSExceptionHandler();
+};
 
 // --- Component Definition ---
 export default function RootLayout() {
@@ -93,6 +99,13 @@ export default function RootLayout() {
         <SessionProvider>
             <AuthProvider>
                 <NotificationBootstrap />
+                <View style={{ flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <Button title="setJSExceptionHandler" onPress={setJSExceptionHandlerClick} />
+                    <Button title="getJSExceptionHandler" onPress={getJSExceptionHandlerClick} />
+                </View>
+                <View style={{ flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <Button title="setNativeExceptionHandler" onPress={setNativeExceptionHandlerClick} />
+                </View>
                 <RootLayoutNav />
             </AuthProvider>
         </SessionProvider>
@@ -120,9 +133,7 @@ function RootLayoutNav() {
         console.log('User: ', user);
     }, [user]);
 
-    useEffect(() => {
-        setupGlobalErrorHandlers();
-    }, []);
+    // (global handlers now set at module scope above)
 
     return (
         <ErrorBoundary>
@@ -130,10 +141,12 @@ function RootLayoutNav() {
                 <ThemeProvider value={ForcedDarkTheme}>
                     <View style={{ flex: 1, backgroundColor: '#000' }}>
                         <StatusBar style="light" backgroundColor="#000" translucent={false} />
-                        <Stack screenOptions={{
-                            contentStyle: { backgroundColor: '#000' },
-                            headerStyle: { backgroundColor: '#000' },
-                        }}>
+                        <Stack
+                            screenOptions={{
+                                contentStyle: { backgroundColor: '#000' },
+                                headerStyle: { backgroundColor: '#000' },
+                            }}
+                        >
                             {user ? <Stack.Screen name="(tabs)" options={{ headerShown: false }} /> : <Stack.Screen name="login" options={{ headerShown: false }} />}
                             <Stack.Screen name="debug" options={{ title: 'Debug' }} />
                             <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
