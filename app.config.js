@@ -1,14 +1,16 @@
-import dotenv from 'dotenv';
-import withNotificationToolsReplace from './plugins/test.cjs';
-import versionData from './version.json';
-import { withPlugins } from '@expo/config-plugins';
-import { withXcodeProject } from 'expo/config-plugins';
-import fs from 'fs';
+// Converted to CommonJS-only so build scripts can safely require this file
+// (previous ESM import of JSON caused: needs an import attribute of "type: json")
+const dotenv = require('dotenv');
+const withNotificationToolsReplace = require('./plugins/test.cjs');
+// Use require for JSON to avoid ESM assertion issues in Node scripts
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const versionData = require('./version.json');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { withXcodeProject } = require('expo/config-plugins');
+const fs = require('fs');
 
 // Explicitly load the .env file
 dotenv.config();
-
-console.log('process.env.GOOGLE_SERVICES_JSON:', process.env.GOOGLE_SERVICES_JSON);
 
 // Add this new plugin
 const withIOSSounds = (config) => {
@@ -87,7 +89,7 @@ module.exports = {
             },
             package: 'com.digitalnomad91.codebuilderadmin',
             permissions: ['NOTIFICATIONS', 'POST_NOTIFICATIONS', 'READ_PHONE_STATE'],
-            googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
+            googleServicesFile: './google-services.json',
             useNextNotificationsApi: true,
             notification: {
                 icon: './assets/images/icon.png',
@@ -98,17 +100,17 @@ module.exports = {
                     apiKey: process.env.GOOGLE_MAPS_API_KEY,
                 },
             },
-            // manifest: {
-            //   application: {
-            //     metaData: [
-            //       {
-            //         "android:name": "com.google.firebase.messaging.default_notification_color",
-            //         "android:resource": "@color/notification_icon_color",
-            //         "tools:replace": "android:resource",
-            //       },
-            //     ],
-            //   },
-            // },
+            manifest: {
+              application: {
+                metaData: [
+                  {
+                    "android:name": "com.google.firebase.messaging.default_notification_color",
+                    "android:resource": "@color/notification_icon_color",
+                    "tools:replace": "android:resource",
+                  },
+                ],
+              },
+            },
         },
         web: {
             bundler: 'metro',
