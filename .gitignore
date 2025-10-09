@@ -54,3 +54,5 @@ GoogleService-Info.plist
 android/
 ios/
 web-build/
+
+.env.local
