@@ -19,12 +19,12 @@ export function getFirebaseApp(): FirebaseApp {
       console.log("Firebase already initialized");
     } catch {
       firebaseApp = initializeApp({
-        apiKey: config.eas.firebaseApiKey,
-        authDomain: config.eas.firebaseAuthDomain,
-        projectId: config.eas.firebaseProjectId,
-        storageBucket: config.eas.firebaseStorageBucket,
-        messagingSenderId: config.eas.firebaseMessagingSenderId,
-        appId: config.eas.firebaseAppId,
+        apiKey: config.firebaseApiKey,
+        authDomain: config.firebaseAuthDomain,
+        projectId: config.firebaseProjectId,
+        storageBucket: config.firebaseStorageBucket,
+        messagingSenderId: config.firebaseMessagingSenderId,
+        appId: config.firebaseAppId,
       });
       console.log("Firebase initialized");
     }

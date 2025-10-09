@@ -76,9 +76,28 @@ export const saveLocation = async (
 
   try {
     const payload = {
-      subscriptionId: effectiveToken,
+      subscriptionId: effectiveToken, // Add subscription ID to the payload
       latitude: location.coords.latitude,
       longitude: location.coords.longitude,
+      altitude: location.coords.altitude,
+      accuracy: location.coords.accuracy,
+      altitudeAccuracy: location.coords.altitudeAccuracy,
+      heading: location.coords.heading,
+      speed: location.coords.speed,
+      mocked: location.mocked,
+      timestamp: location.timestamp,
+      city: geoAddress.city,
+      country: geoAddress.country,
+      district: geoAddress.district,
+      formattedAddress: geoAddress.formattedAddress,
+      isoCountryCode: geoAddress.isoCountryCode,
+      name: geoAddress.name,
+      postalCode: geoAddress.postalCode,
+      region: geoAddress.region,
+      street: geoAddress.street,
+      streetNumber: geoAddress.streetNumber,
+      subregion: geoAddress.subregion,
+      timezone: geoAddress.timezone,
     };
 
     const response = await fetch("https://api.codebuilder.org/location", {
