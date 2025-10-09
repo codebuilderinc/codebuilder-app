@@ -4,16 +4,15 @@ import {
   Button,
   ActivityIndicator,
   StyleSheet,
-  //useColorScheme,
 } from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { useLocation } from "../hooks/useLocation";
 import { useNavigation } from "@react-navigation/native";
+import { useSessionUser } from "@/providers/SessionProvider";
 
 export default function LocationComponent() {
-  const { location, address, error, loading, fetchLocation } = useLocation();
-  //const colorScheme = useColorScheme(); // Get the current color scheme
-  //const textColor = colorScheme === "dark" ? "#ffffff" : "#000000"; // Dynamic text color
+  const { fcmToken } = useSessionUser();
+  const { location, address, error, loading, fetchLocation } = useLocation(fcmToken);
   const textColor = "#ffffff";
   console.log("Navigation context:", useNavigation());
 
