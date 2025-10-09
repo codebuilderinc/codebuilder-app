@@ -8,6 +8,7 @@ import { triggerLocalSampleNotification } from '@/utils/notifications.utils';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import CustomHeader from '@/components/CustomHeader';
 import { simulateAsyncGlobalError, triggerNativeTestException } from '@/services/errorHandler.service';
+import * as Sentry from '@sentry/react-native';
 
 export default function LocationComponent() {
     const { fcmToken } = usePushNotifications();
@@ -90,6 +91,7 @@ export default function LocationComponent() {
                         <Link href="/login" asChild>
                             <Button title="Go to Login" />
                         </Link>
+                        <Button title='Try!' onPress={ () => { Sentry.captureException(new Error('First error')) }}/>
                     </View>
                 </View>
             </ScrollView>
