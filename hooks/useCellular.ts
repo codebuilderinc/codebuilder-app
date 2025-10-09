@@ -9,7 +9,7 @@ import {
   getMobileNetworkCodeAsync,
   getPermissionsAsync,
   requestPermissionsAsync,
-} from "@/utils/cellular";
+} from "@/utils/cellular.utils";
 
 export type CellularInfo = {
   allowsVoip: boolean | null;

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { AppState, Platform } from "react-native";
-import { clipboard } from "../utils/clipboard";
+import { clipboard } from "../utils/clipboard.utils";
 
 export const useClipboard = () => {
   const [clipboardContent, setClipboardContent] = useState<string>("");
@@ -46,7 +46,7 @@ export const useClipboard = () => {
     // Initial check
     checkClipboard();
 
-    let intervalId: NodeJS.Timeout | null = null;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
     let listener: any;
     if (Platform.OS === "ios") {
       intervalId = setInterval(checkClipboard, 1500);
