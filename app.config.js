@@ -101,15 +101,15 @@ module.exports = {
                 },
             },
             manifest: {
-              application: {
-                metaData: [
-                  {
-                    "android:name": "com.google.firebase.messaging.default_notification_color",
-                    "android:resource": "@color/notification_icon_color",
-                    "tools:replace": "android:resource",
-                  },
-                ],
-              },
+                application: {
+                    metaData: [
+                        {
+                            'android:name': 'com.google.firebase.messaging.default_notification_color',
+                            'android:resource': '@color/notification_icon_color',
+                            'tools:replace': 'android:resource',
+                        },
+                    ],
+                },
             },
         },
         web: {
@@ -118,6 +118,14 @@ module.exports = {
             favicon: './assets/images/favicon.png',
         },
         plugins: [
+            [
+                '@sentry/react-native/expo',
+                {
+                    url: 'https://sentry.io/',
+                    project: 'codebuilder-app',
+                    organization: 'codebuilder',
+                },
+            ],
             withNotificationToolsReplace,
             [
                 'expo-camera',

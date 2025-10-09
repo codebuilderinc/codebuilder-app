@@ -12,7 +12,6 @@ import { View, Button } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
 import { usePushNotifications, useNotificationObserver } from '@/hooks/usePushNotifications';
-import { useColorScheme } from '@/hooks/useColorScheme';
 import { registerBackgroundFetch } from '@/utils/tasks.utils';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { NotificationProvider } from '@/providers/NotificationProvider';
@@ -27,6 +26,26 @@ import { setJSExceptionHandler, getJSExceptionHandler, setNativeExceptionHandler
 // Global error handling is centralized in errorHandler.service
 // ✅ keep pathing consistent with your alias
 //import { setupGlobalErrorHandlers } from '@/services/errorHandler.service';
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'https://3b08e871dc551e5b8cce10dcaf1f1724@o1347126.ingest.us.sentry.io/4510152390868992',
+
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
+  // Enable Logs
+  //enableLogs: true,
+
+  // Configure Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [Sentry.mobileReplayIntegration()],
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
 
 // Prevent auto-hiding the splash until fonts are loaded
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -69,7 +88,7 @@ const getJSExceptionHandlerClick = () => {
 };
 
 // --- Component Definition ---
-export default function RootLayout() {
+export default Sentry.wrap(function RootLayout() {
     const navigationRef = useNavigationContainerRef();
 
     // Register background fetch task
@@ -110,7 +129,7 @@ export default function RootLayout() {
             </AuthProvider>
         </SessionProvider>
     );
-}
+});
 
 // Forced dark theme (can be extended later for dynamic theming)
 const ForcedDarkTheme = {
@@ -126,7 +145,6 @@ const ForcedDarkTheme = {
 };
 
 function RootLayoutNav() {
-    // const colorScheme = useColorScheme(); // Not used since we force dark
     const { user } = useAuth();
     // Avoid logging during render to prevent side-effects in LogViewer
     useEffect(() => {
