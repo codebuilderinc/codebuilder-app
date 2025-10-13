@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "Sentry": {
+      "url": "https://mcp.sentry.dev/mcp/codebuilder/codebuilder-app",
+      "type": "http"
+    }
+  }
+}
