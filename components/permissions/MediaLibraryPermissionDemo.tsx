@@ -44,4 +44,3 @@ const styles = StyleSheet.create({
     statusText: { color: '#fff', marginBottom: 4 },
     gap: { height: 10 },
 });
-

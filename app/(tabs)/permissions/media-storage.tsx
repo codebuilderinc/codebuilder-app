@@ -15,4 +15,3 @@ export default function MediaStorageScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#000' },
 });
-

@@ -54,4 +54,3 @@ const styles = StyleSheet.create({
     statusBox: { backgroundColor: '#111', padding: 12, borderRadius: 8, marginTop: 12 },
     statusText: { color: '#fff', marginBottom: 4 },
 });
-

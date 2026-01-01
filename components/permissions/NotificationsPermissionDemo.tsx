@@ -8,7 +8,8 @@ export default function NotificationsPermissionDemo() {
 
     const requestPermissions = async () => {
         const settings = await Notifications.requestPermissionsAsync();
-        setStatus(settings.status ?? settings.granted ? 'granted' : 'denied');
+        const derivedStatus = settings.status ?? (settings.granted ? 'granted' : 'denied');
+        setStatus(derivedStatus);
     };
 
     const schedule = async () => {
@@ -49,4 +50,3 @@ const styles = StyleSheet.create({
     statusText: { color: '#fff', marginBottom: 4 },
     gap: { height: 10 },
 });
-

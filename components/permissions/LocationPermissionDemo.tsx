@@ -60,4 +60,3 @@ const styles = StyleSheet.create({
     error: { color: '#ff6b6b' },
     gap: { height: 10 },
 });
-
