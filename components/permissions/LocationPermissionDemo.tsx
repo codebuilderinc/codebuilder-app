@@ -24,7 +24,7 @@ export default function LocationPermissionDemo() {
             const loc = await Location.getCurrentPositionAsync({});
             setCoords(`${loc.coords.latitude.toFixed(5)}, ${loc.coords.longitude.toFixed(5)}`);
         } catch (e) {
-            setError((e as Error).message);
+            setError(e instanceof Error ? e.message : String(e));
         }
     };
 

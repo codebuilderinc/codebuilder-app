@@ -8,6 +8,7 @@ export default function NotificationsPermissionDemo() {
 
     const requestPermissions = async () => {
         const settings = await Notifications.requestPermissionsAsync();
+        // Expo returns both a status field and a legacy granted boolean; normalize to a single label for display.
         const derivedStatus = settings.status ?? (settings.granted ? 'granted' : 'denied');
         setStatus(derivedStatus);
     };
