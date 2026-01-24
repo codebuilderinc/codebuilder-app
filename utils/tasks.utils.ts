@@ -16,69 +16,50 @@ try {
 
 export const BACKGROUND_TASK_IDENTIFIER = 'background-fetch-task'; // legacy id retained
 
-// Track definition across Fast Refresh cycles
-let taskDefined = (globalThis as any).__CODEBUILDER_BACKGROUND_TASK_DEFINED__ === true;
-function defineBackgroundTask() {
-    if (taskDefined) return;
+// IMPORTANT: TaskManager.defineTask must run in the global scope of the JS bundle.
+// Do NOT guard with global flags; Fast Refresh can keep globals while TaskManager resets.
+const handler = async () => {
     try {
-    const handler = async () => {
-            try {
-                const startedAt = new Date().toISOString();
-                console.log('[BackgroundTask] Started', startedAt);
-                const response = await fetch('https://api.codebuilder.org/jobs/fetch');
-                const contentType = response.headers.get('content-type') || '';
+        const startedAt = new Date().toISOString();
+        console.log('[BackgroundTask] Started', startedAt);
+        const response = await fetch('https://api.codebuilder.org/jobs/fetch');
+                  const contentType = response.headers.get('content-type') || '';
 
-                if (!response.ok) {
-                    const text = await response.text();
-                    console.error('[BackgroundTask] HTTP error', response.status, text.slice(0, 200));
-                    return BackgroundTask.BackgroundTaskResult.Failed;
-                }
-
-                let data: unknown;
-                if (contentType.includes('application/json')) {
-                    data = await response.json();
-                } else {
-                    const text = await response.text();
-                    console.warn('[BackgroundTask] Non-JSON response', text.slice(0, 200));
-                    data = text;
-                }
-
-                console.log('[BackgroundTask] Success fetched data snapshot type:', typeof data);
-                return BackgroundTask.BackgroundTaskResult.Success;
-            } catch (error) {
-                console.error('[BackgroundTask] Failed', error);
-                return BackgroundTask.BackgroundTaskResult.Failed;
-            }
-        };
-        // Prefer TaskManager; some libs might also expose a define API
-        if (typeof (BackgroundTask as any).defineTask === 'function') {
-            try {
-                (BackgroundTask as any).defineTask(BACKGROUND_TASK_IDENTIFIER, handler);
-            } catch (btErr: any) {
-                const m = btErr?.message || '';
-                if (!/already defined/i.test(m)) {
-                    console.warn('[BackgroundTask] BackgroundTask.defineTask failed, falling back to TaskManager.defineTask', m);
-                }
-            }
+        if (!response.ok) {
+            const text = await response.text();
+            console.error('[BackgroundTask] HTTP error', response.status, text.slice(0, 200));
+            return BackgroundTask.BackgroundTaskResult.Failed;
         }
-        TaskManager.defineTask(BACKGROUND_TASK_IDENTIFIER, handler);
-        taskDefined = true;
-        (globalThis as any).__CODEBUILDER_BACKGROUND_TASK_DEFINED__ = true;
-        console.log('[BackgroundTask] Task definition ensured');
-    } catch (e) {
-        // If already defined, ignore; otherwise log
-        const msg = (e as any)?.message || '';
-        if (!/already defined/i.test(msg)) {
-            console.warn('[BackgroundTask] defineTask error', msg);
+
+        let data: unknown;
+        if (contentType.includes('application/json')) {
+            data = await response.json();
         } else {
-            taskDefined = true; // treat as defined
-            (globalThis as any).__CODEBUILDER_BACKGROUND_TASK_DEFINED__ = true;
+            const text = await response.text();
+            console.warn('[BackgroundTask] Non-JSON response', text.slice(0, 200));
+            data = text;
         }
+
+        console.log('[BackgroundTask] Success fetched data snapshot type:', typeof data);
+        return BackgroundTask.BackgroundTaskResult.Success;
+    } catch (error) {
+        console.error('[BackgroundTask] Failed', error);
+        return BackgroundTask.BackgroundTaskResult.Failed;
+    }
+};
+
+try {
+    TaskManager.defineTask(BACKGROUND_TASK_IDENTIFIER, handler);
+    console.log('[BackgroundTask] Task definition ensured');
+} catch (e) {
+    const msg = (e as any)?.message || '';
+    if (/already defined/i.test(msg)) {
+        // Safe to ignore on reload
+        console.log('[BackgroundTask] Task already defined');
+    } else {
+        console.warn('[BackgroundTask] defineTask error', msg);
     }
 }
-
-// Ensure definition at module load
-defineBackgroundTask();
 
 /**
  * Register background task (replaces deprecated expo-background-fetch).
@@ -86,10 +67,15 @@ defineBackgroundTask();
  */
 export async function registerBackgroundFetch(minimumIntervalMinutes: number = 15) {
     try {
-        // Double-ensure task is defined before registering
-        defineBackgroundTask();
-    // Small delay to let task registry settle (helps with Fast Refresh race conditions)
-    await new Promise(res => setTimeout(res, 25));
+        // Small delay to let task registry settle (helps with Fast Refresh race conditions)
+        await new Promise(res => setTimeout(res, 25));
+
+        const alreadyRegistered = await TaskManager.isTaskRegisteredAsync(BACKGROUND_TASK_IDENTIFIER);
+        if (alreadyRegistered) {
+            console.log('[BackgroundTask] Already registered');
+            return true;
+        }
+
         const status = await BackgroundTask.getStatusAsync();
         if (status !== BackgroundTask.BackgroundTaskStatus.Available) {
             console.warn('[BackgroundTask] Not available, status=', status);
@@ -106,8 +92,7 @@ export async function registerBackgroundFetch(minimumIntervalMinutes: number = 1
         if (/not defined/i.test(msg)) {
             console.log('[BackgroundTask] Retrying after ensure definition...');
             try {
-                defineBackgroundTask();
-        await new Promise(res => setTimeout(res, 100));
+                await new Promise(res => setTimeout(res, 100));
                 await BackgroundTask.registerTaskAsync(BACKGROUND_TASK_IDENTIFIER, {
                     minimumInterval: Math.max(15, minimumIntervalMinutes),
                 });
