@@ -85,6 +85,7 @@ const setJSExceptionHandlerClick = () => {
 const getJSExceptionHandlerClick = () => {
     // getJSExceptionHandler gives the currently set JS exception handler
     const currentHandler = getJSExceptionHandler();
+    console.log("current JS Exception Handler: ", currentHandler.toString);
 };
 
 // --- Component Definition ---
@@ -118,14 +119,14 @@ export default Sentry.wrap(function RootLayout() {
         <SessionProvider>
             <AuthProvider>
                 <NotificationBootstrap />
-                <View style={{ flexDirection: 'column', justifyContent: 'space-between' }}>
+                <RootLayoutNav />
+                 <View style={{ flexDirection: 'column', justifyContent: 'space-between' }}>
                     <Button title="setJSExceptionHandler" onPress={setJSExceptionHandlerClick} />
                     <Button title="getJSExceptionHandler" onPress={getJSExceptionHandlerClick} />
                 </View>
                 <View style={{ flexDirection: 'column', justifyContent: 'space-between' }}>
                     <Button title="setNativeExceptionHandler" onPress={setNativeExceptionHandlerClick} />
                 </View>
-                <RootLayoutNav />
             </AuthProvider>
         </SessionProvider>
     );
