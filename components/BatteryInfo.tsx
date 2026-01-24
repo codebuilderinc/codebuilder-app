@@ -22,6 +22,8 @@ const BatteryInfo = () => {
     openBatteryOptimizationSettings,
   } = useBattery();
 
+  const batteryPercent = batteryLevel !== null ? batteryLevel * 100 : null;
+
   const [animatedWidth] = useState(new Animated.Value(0));
   const [pulseOpacity] = useState(new Animated.Value(1));
 
@@ -121,7 +123,10 @@ const BatteryInfo = () => {
                   inputRange: [0, 100],
                   outputRange: ["5%", "100%"], // Ensure minimum width for visibility
                 }),
-                backgroundColor: getBatteryColor(batteryLevel * 100),
+                backgroundColor:
+                  batteryPercent !== null
+                    ? getBatteryColor(batteryPercent)
+                    : styles.batteryBarContainer.backgroundColor,
                 opacity: pulseOpacity, // Charging animation effect
               },
             ]}
