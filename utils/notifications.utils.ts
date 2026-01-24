@@ -1,8 +1,16 @@
 import * as Notifications from "expo-notifications";
-import messaging, {
+import {
   FirebaseMessagingTypes,
+  getToken,
+  onMessage,
+  setBackgroundMessageHandler,
+  onNotificationOpenedApp,
+  getInitialNotification,
+  requestPermission,
+  getMessaging,
 } from "@react-native-firebase/messaging";
 import { Alert, PermissionsAndroid, Platform } from "react-native";
+import { getApp as rnGetApp } from "@react-native-firebase/app";
 import * as Device from "expo-device";
 import { NOTIFICATION_STRINGS } from "../constants/Notifications";
 import { getFirebaseApp } from "./firebase.utils";
@@ -15,17 +23,18 @@ export const testFirebaseMessaging = async () => {
     // Test Firebase initialization
     const app = getFirebaseApp();
     console.log("Firebase app:", app.name, app.options.projectId);
-    
-    // Test messaging instance
-    const messagingInstance = messaging();
-    console.log("Messaging instance created successfully");
-    
+
+    // Test messaging modular API
+    console.log("Using React Native Firebase modular messaging API");
+
+    const messagingInstance = getMessaging(rnGetApp());
+
     // Check if we can get an FCM token
-    const token = await messagingInstance.getToken();
+    const token = await getToken(messagingInstance);
     console.log("FCM token:", token ? token.substring(0, 20) + "..." : "null");
-    
+
     // Check authorization status
-    const authStatus = await messagingInstance.requestPermission();
+    const authStatus = await requestPermission(messagingInstance);
     console.log("FCM authorization status:", authStatus);
     
     return {
@@ -138,7 +147,9 @@ export const handleNotification = async (
 export const handleForegroundNotification = () => {
   console.log("Setting up foreground notification handler...");
   
-  const unsubscribe = messaging().onMessage(async (remoteMessage) => {
+  const messagingInstance = getMessaging(rnGetApp());
+
+  const unsubscribe = onMessage(messagingInstance, async (remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
     console.log("Foreground FCM message received:", JSON.stringify(remoteMessage, null, 2));
 
     try {
@@ -173,21 +184,21 @@ export const handleForegroundNotification = () => {
 
 // Handle background & quit-state notifications
 export const handleBackgroundNotifications = () => {
-  messaging().setBackgroundMessageHandler(async (remoteMessage) => {
+  const messagingInstance = getMessaging(rnGetApp());
+
+  setBackgroundMessageHandler(messagingInstance, async (remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
     console.log("Background message received:", remoteMessage);
   });
 
-  messaging().onNotificationOpenedApp((remoteMessage) => {
+  onNotificationOpenedApp(messagingInstance, (remoteMessage: FirebaseMessagingTypes.RemoteMessage | null) => {
     console.log("Notification opened from background:", remoteMessage);
   });
 
-  messaging()
-    .getInitialNotification()
-    .then((remoteMessage) => {
-      if (remoteMessage) {
-        console.log("Notification opened from quit state:", remoteMessage);
-      }
-    });
+  getInitialNotification(messagingInstance).then((remoteMessage) => {
+    if (remoteMessage) {
+      console.log("Notification opened from quit state:", remoteMessage);
+    }
+  });
 };
 
 export const savePushToken = async (token: string): Promise<void> => {
