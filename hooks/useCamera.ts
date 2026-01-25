@@ -62,8 +62,8 @@ const useCamera = () => {
   };
 
   const cycleFlashMode = () => {
-    setState((prev) => {3
-      const modes: FlashMode[] = ["off", "on", "auto", "torch"];
+    setState((prev) => {
+      const modes: FlashMode[] = ["off", "on", "auto"];
       const currentIndex = modes.indexOf(prev.flashMode);
       const nextIndex = (currentIndex + 1) % modes.length;
       return { ...prev, flashMode: modes[nextIndex] };
@@ -94,15 +94,15 @@ const useCamera = () => {
     setState((prev) => ({ ...prev, isRecording: true }));
 
     const video = await cameraRef.current.recordAsync({
-      quality: "720p",
+      //quality: "720p",
       maxDuration: 300,
-      mute: false,
+     // mute: false,
     });
 
     setState((prev) => ({
       ...prev,
       isRecording: false,
-      video: video.uri,
+      video: video?.uri,
     }));
   };
 
