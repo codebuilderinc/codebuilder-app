@@ -24,12 +24,9 @@
     "skipLibCheck": true,
     "ignoreDeprecations": "6.0",
     "forceConsistentCasingInFileNames": true,
-    // Path aliasing
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "*"
-      ]
+      "@/*": ["./*"]
     }
   },
   "include": [
