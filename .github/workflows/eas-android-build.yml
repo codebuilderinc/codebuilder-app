@@ -133,6 +133,10 @@ jobs:
 
           echo "Using build profile: $BUILD_PROFILE"
 
+          # Ensure Gradle wrapper is staged under build/android for EAS upload
+          echo "Copying gradle wrapper into build/android (if present)"
+          node scripts/fixGradleWrapper.js || true
+
           BUILD_JSON=$(npx eas build -p android --profile $BUILD_PROFILE --non-interactive --json)
           echo "Raw build output: $BUILD_JSON"
           BUILD_ID=$(echo "$BUILD_JSON" | jq -r '.[0].id')
