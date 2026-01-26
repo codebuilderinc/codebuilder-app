@@ -32,7 +32,8 @@
       "android": {
         "node": "22.14.0",
         "env": {
-          "EXPO_NO_CACHE": "1"
+          "EXPO_NO_CACHE": "1",
+          "SENTRY_DISABLE_AUTO_UPLOAD": "true"
         },
         "buildType": "apk",
         "gradleCommand": ":app:assembleRelease"
