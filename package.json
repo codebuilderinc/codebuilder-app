@@ -8,7 +8,7 @@
     "start": "npm run prepare && expo start",
     "prepare": "node scripts/buildScripts.js",
     "prebuild": "npm run prepare",
-    "eas-build-pre-install": "npm run prepare || echo 'prepare script failed'",
+    "eas-build-pre-install": "npm run prepare",
     "android": "npm run prepare && expo run:android",
     "bump-version": "node scripts/bumpVersion.js",
     "ios": "npm run prepare && expo run:ios",
