@@ -50,6 +50,14 @@ interface Job {
     data?: any;
 }
 
+interface JobsApiResponse {
+    success: boolean;
+    data: {
+        items: Job[];
+        totalCount: number;
+    };
+}
+
 export default function JobsListView() {
     const [jobs, setJobs] = useState<Job[]>([]);
     const [page, setPage] = useState(1);
@@ -77,11 +85,11 @@ export default function JobsListView() {
                 throw new Error(`Error: ${response.statusText}`);
             }
 
-            const json = await response.json();
+            const jobsResponse: JobsApiResponse = await response.json() as JobsApiResponse;
 
             // API returns { success: true, data: { items: [...], totalCount: N } }
-            const items: Job[] = json?.data?.items || [];
-            const total: number = json?.data?.totalCount || 0;
+            const items: Job[] = jobsResponse?.data?.items || [];
+            const total: number = jobsResponse?.data?.totalCount || 0;
 
             console.log(`Received ${items.length} jobs, total: ${total}`);
 
