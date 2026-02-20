@@ -34,7 +34,7 @@
     "@sentry/react-native": "~7.2.0",
     "babel-preset-expo": "~54.0.9",
     "dotenv": "^17.2.3",
-    "expo": "~54.0.32",
+    "expo": "~54.0.33",
     "expo-background-task": "~1.0.10",
     "expo-battery": "^10.0.8",
     "expo-build-properties": "^1.0.10",
