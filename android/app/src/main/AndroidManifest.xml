@@ -14,7 +14,6 @@
   <uses-permission android:name="android.permission.ACCESS_INPUT_FLINGER"/>
   <uses-permission android:name="android.permission.ACCESS_KEYGUARD_SECURE_STORAGE"/>
   <uses-permission android:name="android.permission.ACCESS_LOCATION_EXTRA_COMMANDS"/>
-  <uses-permission android:name="android.permission.ACCESS_MOCK_LOCATION"/>
   <uses-permission android:name="android.permission.ACCESS_MTP"/>
   <uses-permission android:name="android.permission.ACCESS_NETWORK_CONDITIONS"/>
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>

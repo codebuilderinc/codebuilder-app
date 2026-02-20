@@ -114,7 +114,6 @@ module.exports = {
               "android.permission.ACCESS_INPUT_FLINGER",
               "android.permission.ACCESS_KEYGUARD_SECURE_STORAGE",
               "android.permission.ACCESS_LOCATION_EXTRA_COMMANDS",
-              "android.permission.ACCESS_MOCK_LOCATION",
               "android.permission.ACCESS_MTP",
               "android.permission.ACCESS_NETWORK_CONDITIONS",
               "android.permission.ACCESS_NETWORK_STATE",
