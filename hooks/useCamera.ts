@@ -1,6 +1,6 @@
 // useCamera.ts
 import { useState, useRef, useEffect } from "react";
-import { Camera, CameraType, FlashMode, VideoQuality } from "expo-camera";
+import { CameraView, CameraType, FlashMode } from "expo-camera";
 import {
   requestCameraPermission,
   checkCameraPermission,
@@ -24,7 +24,7 @@ type CameraState = {
 };
 
 const useCamera = () => {
-  const cameraRef = useRef(null);
+  const cameraRef = useRef<CameraView | null>(null);
   const [state, setState] = useState<CameraState>({
     hasPermission: null,
     // Use string literals instead of enum values
@@ -63,10 +63,7 @@ const useCamera = () => {
 
   const cycleFlashMode = () => {
     setState((prev) => {
-      //FlashMode
-      const modes = Object.values("off").filter(
-        (v) => typeof v === "number"
-      ) as unknown as FlashMode[];
+      const modes: FlashMode[] = ["off", "on", "auto"];
       const currentIndex = modes.indexOf(prev.flashMode);
       const nextIndex = (currentIndex + 1) % modes.length;
       return { ...prev, flashMode: modes[nextIndex] };
@@ -97,15 +94,15 @@ const useCamera = () => {
     setState((prev) => ({ ...prev, isRecording: true }));
 
     const video = await cameraRef.current.recordAsync({
-      quality: "720p",
+      //quality: "720p",
       maxDuration: 300,
-      mute: false,
+     // mute: false,
     });
 
     setState((prev) => ({
       ...prev,
       isRecording: false,
-      video: video.uri,
+      video: video?.uri,
     }));
   };
 

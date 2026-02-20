@@ -1,5 +1,6 @@
 {
       "scripts": [
+            "fixGradleWrapper.js",
             "prepareGoogleServices.js",
             { "path": "setupExceptionHandler.js", "enabled": false, "reason": "Replaced by config plugin nativeExceptionHandler.cjs" }
       ]

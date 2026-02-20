@@ -43,7 +43,19 @@ interface Job {
     updatedAt: string;
     tags: JobTag[];
     metadata: JobMetadata[];
-    sources: JobSource[];
+    sources?: JobSource[];
+    source?: string;
+    externalId?: string;
+    companyId?: number;
+    data?: any;
+}
+
+interface JobsApiResponse {
+    success: boolean;
+    data: {
+        items: Job[];
+        totalCount: number;
+    };
 }
 
 export default function JobsListView() {
@@ -57,31 +69,32 @@ export default function JobsListView() {
 
     const totalPages = Math.ceil(totalCount / pageSize);
 
-    const fetchJobs = async () => {
+    const fetchJobs = async (pageArg?: number) => {
         try {
             setLoading(true);
             setError(null);
 
-            // Calculate skip value based on page
-            const skipValue = (page - 1) * pageSize;
+            // Determine page to fetch (allow explicit arg for refresh)
+            const currentPage = pageArg ?? page;
+            const skipValue = (currentPage - 1) * pageSize;
 
-            // Log API request for debugging
-            console.log(`Fetching jobs with: skip=${skipValue}, first=${pageSize}, page=${page}`);
+            console.log(`Fetching jobs with: skip=${skipValue}, first=${pageSize}, page=${currentPage}`);
 
-            // Use the new API endpoint with pagination parameters
             const response = await fetch(`https://api.codebuilder.org/jobs?skip=${skipValue}&first=${pageSize}`);
-
             if (!response.ok) {
                 throw new Error(`Error: ${response.statusText}`);
             }
 
-            const data = await response.json();
+            const jobsResponse: JobsApiResponse = await response.json() as JobsApiResponse;
 
-            // Log response data for debugging
-            console.log(`Received ${data.jobs?.length || 0} jobs, total: ${data.totalCount || 0}`);
+            // API returns { success: true, data: { items: [...], totalCount: N } }
+            const items: Job[] = jobsResponse?.data?.items || [];
+            const total: number = jobsResponse?.data?.totalCount || 0;
 
-            setJobs(data.jobs || []);
-            setTotalCount(data.totalCount || 0);
+            console.log(`Received ${items.length} jobs, total: ${total}`);
+
+            setJobs(items);
+            setTotalCount(total);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An unknown error occurred');
         } finally {
@@ -93,7 +106,7 @@ export default function JobsListView() {
         try {
             setRefreshing(true);
             setPage(1); // Reset to the first page when refreshing
-            await fetchJobs();
+            await fetchJobs(1);
         } finally {
             setRefreshing(false);
         }
@@ -109,9 +122,9 @@ export default function JobsListView() {
     // Handle page changes
     useEffect(() => {
         if (page > 1) {
-            // Skip on initial load (page 1 is already loaded)
+            // Only fetch when user navigates to pages beyond the initial page
             console.log(`Page changed to ${page}, fetching new data`);
-            fetchJobs();
+            fetchJobs(page);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page]); // Only run when page changes
@@ -144,9 +157,8 @@ export default function JobsListView() {
 
     // Helper function to get job source
     const getJobSource = (job: Job): string => {
-        if (job.sources && job.sources.length > 0) {
-            return job.sources[0].source;
-        }
+        if (job.source) return job.source;
+        if (job.sources && job.sources.length > 0) return job.sources[0].source;
         return 'Unknown';
     };
 

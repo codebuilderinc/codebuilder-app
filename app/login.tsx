@@ -73,9 +73,9 @@ function LoginScreenContent() {
             // Simple configuration with minimal logging to prevent recursion
             try {
                 // Use different client IDs for debug vs production
-                const webClientId = __DEV__ 
-                    ? Constants.expoConfig?.extra?.googleWebClientIdDev || Constants.expoConfig?.extra?.googleWebClientId
-                    : Constants.expoConfig?.extra?.googleWebClientId;
+                const extra = Constants.expoConfig?.extra;
+                const webClientId = __DEV__ ? (extra?.googleWebClientIdDev || extra?.googleWebClientId) : extra?.googleWebClientId;
+                console.log("webClientId:", webClientId || 'MISSING');
 
                 if (!webClientId) {
                     console.warn('🟡 Google Web Client ID is missing. Falling back to no offline access.');

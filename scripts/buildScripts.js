@@ -45,6 +45,7 @@ function runBuildScripts() {
     console.log('🚀 Running build scripts...');
 
     const scripts = getScriptsToRun();
+  const failedScripts = [];
 
     scripts.forEach((scriptPath) => {
         const fullPath = path.join(__dirname, scriptPath);
@@ -67,8 +68,14 @@ function runBuildScripts() {
       console.log(`✅ Completed: ${scriptPath}`);
     } catch (error) {
       console.error(`❌ Error running ${scriptPath}:`, error.message);
+      failedScripts.push(scriptPath);
     }
   });
+
+    if (failedScripts.length > 0) {
+        console.error(`❌ Build scripts failed: ${failedScripts.join(', ')}`);
+        process.exit(1);
+    }
 
     console.log('✨ Build scripts completed');
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSession } from '@/providers/SessionProvider';
 import * as LocationLibrary from "expo-location";
 import {
@@ -17,11 +17,11 @@ export const useLocation = (fcmToken: string | null) => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
-  const fetchLocation = async () => {
+  const fetchLocation = async (tokenForSave: string | null) => {
     try {
       setLoading(true);
 
-      if (!fcmToken) {
+      if (!tokenForSave) {
         console.log(
           "fetchLocation invoked without an FCM token; aborting location save step."
         );
@@ -43,7 +43,7 @@ export const useLocation = (fcmToken: string | null) => {
         setAddress(geoAddress);
 
         if (geoAddress) {
-          await saveLocation(currentLocation, geoAddress, fcmToken); // Pass fcmToken (may be null; saveLocation will re-check)
+          await saveLocation(currentLocation, geoAddress, tokenForSave); // Pass resolved token (may be null; saveLocation will re-check)
         } else {
           console.log("Geo address unavailable; skipping saveLocation.");
         }
@@ -58,12 +58,26 @@ export const useLocation = (fcmToken: string | null) => {
 
   const { waitForFcmToken } = useSession();
 
+  const lastSavedTokenRef = useRef<string | null>(null);
+  const inFlightRef = useRef(false);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const token = fcmToken || (await waitForFcmToken());
-      if (!cancelled && token) {
-        fetchLocation();
+      if (cancelled || !token) return;
+
+      // React 18 StrictMode and token updates can cause this effect to run twice.
+      // Only save once per token (and avoid overlapping requests).
+      if (inFlightRef.current) return;
+      if (lastSavedTokenRef.current === token) return;
+
+      inFlightRef.current = true;
+      try {
+        await fetchLocation(token);
+        lastSavedTokenRef.current = token;
+      } finally {
+        inFlightRef.current = false;
       }
     })();
     return () => {

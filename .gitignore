@@ -51,8 +51,8 @@ GoogleService-Info.plist
 .vscode/settings.json
 
 # Android / iOS Build Folders
-android/
-ios/
-web-build/
+#android/
+#ios/
+#web-build/
 
-.env.local
+#.env.local
