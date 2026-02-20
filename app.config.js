@@ -17,11 +17,20 @@ const withIOSSounds = (config) => {
     return withXcodeProject(config, async (cfg) => {
         const xcodeProject = cfg.modResults;
         const appName = 'CodeBuilder Admin'; // Match your iOS project name
-        const soundFiles = fs.readdirSync(`./ios/${appName}/Sounds`);
+        const iosFolderName = appName.replace(/\s+/g, '');
+        const soundsDir = `./ios/${iosFolderName}/Sounds`;
+
+        // Check if directory exists before reading (handles prebuild --clean)
+        if (!fs.existsSync(soundsDir)) {
+            console.log(`⚠️  Sounds directory not found at ${soundsDir}, skipping sound file registration`);
+            return cfg;
+        }
+
+        const soundFiles = fs.readdirSync(soundsDir);
 
         soundFiles.forEach((file) => {
             xcodeProject.addResourceFile({
-                path: `${appName}/Sounds/${file}`,
+                path: `${iosFolderName}/Sounds/${file}`,
                 group: 'Resources',
             });
         });
