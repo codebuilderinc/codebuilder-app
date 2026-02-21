@@ -44,6 +44,13 @@ export default function TabLayout() {
                     tabBarIcon: ({ color }: { color: string }) => <TabBarIcon name="phone" color={color} />,
                 }}
             />
+            <Tabs.Screen
+                name="permissions"
+                options={{
+                    title: 'Permissions',
+                    tabBarIcon: ({ color }: { color: string }) => <TabBarIcon name="shield" color={color} />,
+                }}
+            />
         </Tabs>
     );
 }
