@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Button, StyleSheet, ScrollView } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import { triggerLocalSampleNotification } from '@/utils/notifications.utils';
 
 export default function NotificationsPermissionDemo() {
     const [status, setStatus] = useState<string>('unknown');
@@ -32,7 +33,9 @@ export default function NotificationsPermissionDemo() {
             </Text>
             <Button title="Request notification permission" onPress={requestPermissions} />
             <View style={styles.gap} />
-            <Button title="Schedule demo notification" onPress={schedule} />
+            <Button title="Schedule demo notification (2s delay)" onPress={schedule} />
+            <View style={styles.gap} />
+            <Button title="Trigger Sample Notification" onPress={triggerLocalSampleNotification} color="#FF9800" />
 
             <View style={styles.statusBox}>
                 <Text style={styles.statusText}>Status: {status}</Text>

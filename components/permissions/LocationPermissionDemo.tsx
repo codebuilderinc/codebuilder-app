@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
-import { View, Text, Button, StyleSheet, ScrollView, Platform } from 'react-native';
+ import { View, Text, Button, StyleSheet, ScrollView, Platform, ActivityIndicator } from 'react-native';
+import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
+import { useLocation } from '@/hooks/useLocation';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 export default function LocationPermissionDemo() {
-    const [status, setStatus] = useState<Location.PermissionStatus | null>(null);
+    const [fgStatus, setFgStatus] = useState<Location.PermissionStatus | null>(null);
     const [backgroundStatus, setBackgroundStatus] = useState<Location.PermissionStatus | null>(null);
-    const [coords, setCoords] = useState<string>('');
-    const [error, setError] = useState<string>('');
+
+    const { fcmToken } = usePushNotifications();
+    const { location, address, error, loading, fetchLocation } = useLocation(fcmToken);
 
     const requestPermissions = async () => {
-        setError('');
         const fg = await Location.requestForegroundPermissionsAsync();
-        setStatus(fg.status);
+        setFgStatus(fg.status);
 
         if (Platform.OS === 'android') {
             const bg = await Location.requestBackgroundPermissionsAsync();
@@ -19,13 +22,8 @@ export default function LocationPermissionDemo() {
         }
     };
 
-    const fetchLocation = async () => {
-        try {
-            const loc = await Location.getCurrentPositionAsync({});
-            setCoords(`${loc.coords.latitude.toFixed(5)}, ${loc.coords.longitude.toFixed(5)}`);
-        } catch (e) {
-            setError(e instanceof Error ? e.message : String(e));
-        }
+    const handleFetchLocation = () => {
+        fetchLocation(fcmToken);
     };
 
     return (
@@ -38,14 +36,55 @@ export default function LocationPermissionDemo() {
 
             <Button title="Request location permissions" onPress={requestPermissions} />
             <View style={styles.gap} />
-            <Button title="Fetch current location" onPress={fetchLocation} />
+            <Button title="Fetch current location" onPress={handleFetchLocation} />
 
+            {/* Permission Status */}
             <View style={styles.statusBox}>
-                <Text style={styles.statusText}>Foreground: {status ?? 'unknown'}</Text>
+                <Text style={styles.statusText}>Foreground: {fgStatus ?? 'unknown'}</Text>
                 {Platform.OS === 'android' && <Text style={styles.statusText}>Background: {backgroundStatus ?? 'unknown'}</Text>}
-                {coords ? <Text style={styles.statusText}>Last fix: {coords}</Text> : null}
-                {error ? <Text style={[styles.statusText, styles.error]}>{error}</Text> : null}
             </View>
+
+            {/* Location Data & Map */}
+            {loading ? (
+                <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />
+            ) : error ? (
+                <Text style={[styles.statusText, styles.error]}>{error}</Text>
+            ) : location && address ? (
+                <>
+                    <View style={styles.statusBox}>
+                        <Text style={styles.statusText}>
+                            Address: {address.name}, {address.city}, {address.region}, {address.country}
+                        </Text>
+                        <Text style={styles.statusText}>
+                            Coordinates: {location.coords.latitude.toFixed(5)}, {location.coords.longitude.toFixed(5)}
+                        </Text>
+                    </View>
+
+                    <View style={styles.mapContainer}>
+                        <MapView
+                            style={styles.map}
+                            region={{
+                                latitude: location.coords.latitude,
+                                longitude: location.coords.longitude,
+                                latitudeDelta: 0.01,
+                                longitudeDelta: 0.01,
+                            }}
+                            showsUserLocation={true}
+                            loadingEnabled={true}
+                        >
+                            <Marker
+                                coordinate={{
+                                    latitude: location.coords.latitude,
+                                    longitude: location.coords.longitude,
+                                }}
+                                title="You are here"
+                            />
+                        </MapView>
+                    </View>
+                </>
+            ) : (
+                <Text style={styles.statusText}>Press "Fetch current location" to get your location</Text>
+            )}
         </ScrollView>
     );
 }
@@ -59,4 +98,16 @@ const styles = StyleSheet.create({
     statusText: { color: '#fff', marginBottom: 4 },
     error: { color: '#ff6b6b' },
     gap: { height: 10 },
+    loader: { marginTop: 20 },
+    mapContainer: {
+        width: '100%',
+        height: 300,
+        marginTop: 16,
+        borderRadius: 10,
+        overflow: 'hidden',
+    },
+    map: {
+        width: '100%',
+        height: '100%',
+    },
 });
