@@ -21,7 +21,7 @@ export default function ProfileScreen() {
     // Redirect to login if not authenticated (only after component is ready)
     useEffect(() => {
         if (isReady && !user) {
-            router.push('/login');
+            router.replace('/login');
         }
     }, [user, isReady]);
 
