@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useSessionUser, useSession } from '@/providers/SessionProvider';
 import { BACKGROUND_TASK_IDENTIFIER, getBackgroundTaskRegistrationState, registerBackgroundFetch, unregisterBackgroundTask, triggerBackgroundTaskForTesting } from '@/utils/tasks.utils';
+import { setJSExceptionHandler, getJSExceptionHandler, setNativeExceptionHandler } from 'react-native-exception-handler';
+import { simulateAsyncGlobalError, triggerNativeTestException } from '@/services/errorHandler.service';
 
 interface BgState {
   status: number | null;
@@ -9,6 +11,30 @@ interface BgState {
   loading: boolean;
   lastAction?: string;
 }
+
+// Exception handler callbacks 
+const jsExceptionHandler = (error: any, isFatal: boolean) => {
+  console.log('ExceptionHandler called with error: ', error, 'isFatal: ', isFatal);
+};
+
+const nativeExceptionHandler = (exceptionString: string) => {
+  console.log('Native ExceptionHandler called with exception: ', exceptionString);
+};
+
+const handleSetJSException = () => {
+  setJSExceptionHandler(jsExceptionHandler, true);
+  console.log('JS Exception Handler set!');
+};
+
+const handleGetJSException = () => {
+  const currentHandler = getJSExceptionHandler();
+  console.log('Current JS Exception Handler: ', currentHandler.toString());
+};
+
+const handleSetNativeException = () => {
+  setNativeExceptionHandler(nativeExceptionHandler, false, false);
+  console.log('Native Exception Handler set!');
+};
 
 export default function DebugScreen() {
   const { fcmToken, authReady, fcmReady, user, accessToken } = useSessionUser();
@@ -67,10 +93,25 @@ export default function DebugScreen() {
         <Mono label="Registered" value={String(bg.isRegistered)} />
         <Mono label="Last Action" value={bg.lastAction || '—'} />
         <View style={styles.rowWrap}>
-          <Btn label="Refresh" onPress={refresh} disabled={bg.loading} />
-          <Btn label="Register" onPress={register} disabled={bg.loading || bg.isRegistered} />
-            <Btn label="Unregister" onPress={unregister} disabled={bg.loading || !bg.isRegistered} />
-          <Btn label="Trigger(dev)" onPress={trigger} />
+          <Btn label="🔄 Refresh" onPress={refresh} disabled={bg.loading} />
+          <Btn label="✅ Register" onPress={register} disabled={bg.loading || bg.isRegistered} color="#2e7d32" />
+          <Btn label="❌ Unregister" onPress={unregister} disabled={bg.loading || !bg.isRegistered} color="#c62828" />
+          <Btn label="⚡ Trigger(dev)" onPress={trigger} color="#f57c00" />
+        </View>
+      </Section>
+      <Section title="Exception Handlers">
+        <Text style={styles.infoText}>Configure global error handling for JS and native exceptions.</Text>
+        <View style={styles.rowWrap}>
+          <Btn label="🛡️ Set JS Handler" onPress={handleSetJSException} color="#1565c0" />
+          <Btn label="🔍 Get JS Handler" onPress={handleGetJSException} color="#6a1b9a" />
+          <Btn label="📱 Set Native Handler" onPress={handleSetNativeException} color="#00695c" />
+        </View>
+      </Section>
+      <Section title="Crash Tests">
+        <Text style={styles.infoText}>Test crash handling and error reporting to Sentry.</Text>
+        <View style={styles.rowWrap}>
+          <Btn label="💥 JS Crash (async)" onPress={() => simulateAsyncGlobalError('Manual JS async crash test')} color="#ef6c00" />
+          <Btn label="🔥 Native Crash" onPress={triggerNativeTestException} color="#d32f2f" />
         </View>
       </Section>
       <Text style={styles.footer}>Build Debug Utilities v1</Text>
@@ -96,11 +137,11 @@ function Mono({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Btn({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
+function Btn({ label, onPress, disabled, color }: { label: string; onPress: () => void; disabled?: boolean; color?: string }) {
   return (
     <Pressable
       onPress={disabled ? undefined : onPress}
-      style={[styles.btn, disabled && styles.btnDisabled]}
+      style={[styles.btn, color ? { backgroundColor: color } : null, disabled && styles.btnDisabled]}
       android_ripple={{ color: '#222' }}
     >
       <Text style={styles.btnText}>{label}</Text>
@@ -119,7 +160,8 @@ const styles = StyleSheet.create({
   kvValue: { color: '#fff', fontFamily: 'monospace', fontSize: 13, flexShrink: 1, textAlign: 'right' },
   code: { color: '#8f8', fontFamily: 'monospace', fontSize: 12 },
   rowWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  btn: { backgroundColor: '#222', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 6, marginRight: 8, marginBottom: 8 },
+  btn: { backgroundColor: '#333', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 8, marginRight: 8, marginBottom: 8 },
+  infoText: { color: '#888', fontSize: 12, marginBottom: 8 },
   btnDisabled: { opacity: 0.4 },
   btnText: { color: '#fff', fontSize: 12, fontWeight: '600' },
   footer: { textAlign: 'center', color: '#444', fontSize: 12 },

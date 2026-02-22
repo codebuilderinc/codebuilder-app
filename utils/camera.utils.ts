@@ -13,7 +13,14 @@ export const checkCameraPermission = async (): Promise<PermissionResponse> => {
 };
 
 export const getAvailableCameraTypes = async (): Promise<CameraType[]> => {
-  return ["front", "back"];
+  try {
+    const types = await Camera.getAvailableCameraTypesAsync();
+    return types as CameraType[];
+  } catch (error) {
+    console.warn("Failed to get available camera types:", error);
+    // Fallback to common camera types
+    return ["front", "back"];
+  }
 };
 
 export const isFlashSupported = async (): Promise<boolean> => {
@@ -35,5 +42,5 @@ export const flashModeToLabel = (mode: FlashMode): string => {
 };
 
 export const toggleCameraType = (current: CameraType): CameraType => {
-  return current === "front" ? "front" : "back";
+  return current === "front" ? "back" : "front";
 };

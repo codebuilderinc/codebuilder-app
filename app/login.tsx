@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Text, SafeAreaView, Image, ScrollView, Pressable } from 'react-native';
+import { View, StyleSheet, Text, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { GoogleSignin, GoogleSigninButton } from '@react-native-google-signin/google-signin';
 import Constants from 'expo-constants';
 import { useAuth } from '@/hooks/useAuth';
@@ -414,74 +415,33 @@ function LoginScreenContent() {
         }
     };
 
-    // Show different UI based on authentication state
-    if (!user) {
+    // Redirect to profile if already logged in
+    useEffect(() => {
+        if (user) {
+            router.replace('/(tabs)/profile');
+        }
+    }, [user]);
+
+    // Show loading state while checking auth or redirecting
+    if (user) {
         return (
             <View style={styles.container}>
-                <Text style={styles.title}>Login</Text>
-                <View style={styles.row}>
-                    <GoogleSigninButton onPress={signIn} size={GoogleSigninButton.Size.Standard} color={GoogleSigninButton.Color.Dark} style={{ marginBottom: 16 }} />
-                    <Pressable style={styles.debugButton} onPress={() => router.push('/debug' as any)} hitSlop={8}>
-                        <Text style={styles.debugButtonText}>Debug</Text>
-                    </Pressable>
-                </View>
+                <Text style={styles.title}>Redirecting...</Text>
             </View>
         );
     }
 
-    // User is logged in
+    // Show login UI when not authenticated
     return (
-        <ScrollView contentContainerStyle={styles.container}>
-            <Text style={styles.title}>Account Information</Text>
-
-            {user.user.photo && <Image source={{ uri: user.user.photo }} style={styles.profileImage} />}
-
-            <View style={styles.infoContainer}>
-                <Text style={styles.label}>Name:</Text>
-                <Text style={styles.value}>{user.user.name || 'N/A'}</Text>
-
-                <Text style={styles.label}>Email:</Text>
-                <Text style={styles.value}>{user.user.email}</Text>
-
-                <Text style={styles.label}>Status:</Text>
-                <Text style={[styles.value, styles.statusBadge]}>{user.accessToken ? '✓ Authenticated' : '⚠️ Partial Auth'}</Text>
+        <View style={styles.container}>
+            <Text style={styles.title}>Login</Text>
+            <View style={styles.row}>
+                <GoogleSigninButton onPress={signIn} size={GoogleSigninButton.Size.Standard} color={GoogleSigninButton.Color.Dark} style={{ marginBottom: 16 }} />
+                <Pressable style={styles.debugButton} onPress={() => router.push('/debug' as any)} hitSlop={8}>
+                    <Text style={styles.debugButtonText}>Debug</Text>
+                </Pressable>
             </View>
-
-            <View style={styles.tokenInfo}>
-                <Text style={styles.tokenLabel}>ID Token:</Text>
-                <Text style={styles.tokenValue} numberOfLines={1} ellipsizeMode="middle">
-                    {user.idToken.substring(0, 15)}...
-                </Text>
-
-                {user.accessToken && (
-                    <>
-                        <Text style={styles.tokenLabel}>Access Token:</Text>
-                        <Text style={styles.tokenValue} numberOfLines={1} ellipsizeMode="middle">
-                            {user.accessToken.substring(0, 15)}...
-                        </Text>
-                    </>
-                )}
-
-                {user.refreshToken && (
-                    <>
-                        <Text style={styles.tokenLabel}>Refresh Token:</Text>
-                        <Text style={styles.tokenValue} numberOfLines={1} ellipsizeMode="middle">
-                            {user.refreshToken.substring(0, 15)}...
-                        </Text>
-                    </>
-                )}
-            </View>
-
-            <View style={styles.buttonContainer}>
-                <Text style={styles.signOutButton} onPress={signOut}>
-                    Sign Out
-                </Text>
-
-                <Text style={styles.revokeButton} onPress={revokeAccess}>
-                    Revoke Access
-                </Text>
-            </View>
-        </ScrollView>
+        </View>
     );
 }
 
@@ -489,70 +449,6 @@ const styles = StyleSheet.create({
     container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16, backgroundColor: '#000' },
     title: { fontSize: 24, fontWeight: '600', marginBottom: 16, color: '#fff' },
     row: { flexDirection: 'row', alignItems: 'center' },
-    profileImage: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        marginBottom: 20,
-    },
     debugButton: { marginLeft: 12, backgroundColor: '#333', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 6, justifyContent: 'center' },
     debugButtonText: { color: '#fff', fontWeight: '600' },
-    infoContainer: {
-        width: '100%',
-        backgroundColor: '#111',
-        padding: 16,
-        borderRadius: 8,
-        marginBottom: 20,
-    },
-    label: {
-        fontWeight: '600',
-        marginBottom: 4,
-        color: '#ccc',
-    },
-    value: {
-        marginBottom: 16,
-        fontSize: 16,
-        color: '#fff',
-    },
-    statusBadge: {
-        color: '#4caf50',
-        fontWeight: '600',
-    },
-    tokenInfo: {
-        width: '100%',
-        backgroundColor: '#1a2d1a',
-        padding: 16,
-        borderRadius: 8,
-        marginBottom: 20,
-    },
-    tokenLabel: {
-        fontWeight: '600',
-        marginBottom: 4,
-        color: '#66bb6a',
-    },
-    tokenValue: {
-        marginBottom: 16,
-        fontSize: 14,
-        fontFamily: 'monospace',
-        color: '#c8e6c9',
-    },
-    buttonContainer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        width: '100%',
-        marginTop: 8,
-    },
-    signOutButton: {
-        color: '#2196f3',
-        marginRight: 16,
-        textDecorationLine: 'underline',
-        fontSize: 16,
-        padding: 8,
-    },
-    revokeButton: {
-        color: '#f44336',
-        textDecorationLine: 'underline',
-        fontSize: 16,
-        padding: 8,
-    },
 });

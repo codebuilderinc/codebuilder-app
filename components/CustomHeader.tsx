@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, Link } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Colors from '@/constants/Colors';
@@ -15,9 +16,10 @@ export default function CustomHeader({ title, showBackButton = false, showModalB
     const router = useRouter();
     const colorScheme = useColorScheme();
     const textColor = Colors[colorScheme ?? 'light'].text;
+    const insets = useSafeAreaInsets();
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { paddingTop: insets.top + 5 }]}>
             {showBackButton && (
                 <Pressable style={styles.backButton} onPress={() => router.back()}>
                     <FontAwesome name="arrow-left" size={22} color={textColor} />
@@ -39,7 +41,8 @@ export default function CustomHeader({ title, showBackButton = false, showModalB
 
 const styles = StyleSheet.create({
     container: {
-        height: 60,
+        height: 'auto',
+        minHeight: 60,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -47,7 +50,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#121212',
         borderBottomWidth: 1,
         borderBottomColor: '#333',
-        paddingTop: 5,
+        paddingBottom: 10,
         marginBottom: 5,
     },
     backButton: {

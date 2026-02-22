@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, Text, View, Button, StyleSheet } from 'react-native';
 import { ConsoleView } from 'react-native-console-view';
+import { timeAgo } from '@/utils/misc.utils';
 
 // Log level types and styling properties
 type LogLevel = 'log' | 'error' | 'warn';
@@ -23,14 +24,24 @@ interface LogEntry {
     level: LogLevel;
     message: string;
     timestamp: string;
+    createdAt: Date;
 }
 
 const LogViewer = () => {
     const [logs, setLogs] = useState<LogEntry[]>([]);
+    const [, setTick] = useState(0);
     const scrollViewRef = useRef<ScrollView>(null);
 
     // Flag to prevent recursive logging
     const isLoggingRef = useRef(false);
+
+    // Auto-refresh timeAgo values every 30 seconds
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setTick((t) => t + 1);
+        }, 30000);
+        return () => clearInterval(interval);
+    }, []);
 
     useEffect(() => {
         const originalLog = console.log;
@@ -72,6 +83,7 @@ const LogViewer = () => {
                 }
 
                 // Defer state update to microtask to avoid setState during another component's render
+                const createdAt = new Date(now);
                 Promise.resolve().then(() => {
                     setLogs((prev) => {
                         // Add new log to the beginning (newest first)
@@ -80,6 +92,7 @@ const LogViewer = () => {
                                 level,
                                 message: messageStr,
                                 timestamp,
+                                createdAt,
                             },
                             ...prev,
                         ];
@@ -133,10 +146,15 @@ const LogViewer = () => {
             >
                 {logs.map((log, index) => (
                     <View key={index} style={styles.logItem}>
-                        <Text style={[styles.logHeader, { color: colorForLevel[log.level] }]}>
-                            {emojiForLevel[log.level]} [{log.timestamp}] [{log.level.toUpperCase()}]
+                        <View style={styles.logHeaderRow}>
+                            <Text style={[styles.logHeader, { color: colorForLevel[log.level] }]}>
+                                [{log.timestamp}] [{log.level.toUpperCase()}]
+                            </Text>
+                            <Text style={styles.timeAgo}>{timeAgo(log.createdAt)}</Text>
+                        </View>
+                        <Text style={styles.logMessage}>
+                            {emojiForLevel[log.level]} {log.message}
                         </Text>
-                        <Text style={styles.logMessage}>{log.message}</Text>
                         {index < logs.length - 1 && <View style={styles.separator} />}
                     </View>
                 ))}
@@ -156,37 +174,45 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: '#3498db',
         margin: 10,
-        height: 400, // Fixed height instead of flex: 1
-        overflow: 'hidden', // Prevent content from overflowing
+        height: 400,
+        minWidth: 320,
+        width: '100%',
+        overflow: 'hidden',
     },
     scrollView: {
         marginTop: 10,
-        height: 300, // Fixed height to ensure scrollability
-        flexGrow: 0, // Prevent expanding
+        height: 300,
+        flexGrow: 0,
     },
     scrollContent: {
         paddingBottom: 10,
     },
     logItem: {
-        marginBottom: 8,
         paddingHorizontal: 8,
-        paddingVertical: 4,
+        paddingVertical: 6,
+    },
+    logHeaderRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
     logHeader: {
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: 'bold',
-        marginBottom: 4,
+    },
+    timeAgo: {
+        fontSize: 10,
+        color: '#888',
     },
     logMessage: {
         color: 'white',
         fontSize: 12,
-        marginLeft: 8,
+        marginTop: 2,
     },
     separator: {
         borderBottomWidth: 1,
         borderBottomColor: '#444',
         marginTop: 8,
-        marginBottom: 8,
     },
     buttonContainer: {
         marginTop: 10,

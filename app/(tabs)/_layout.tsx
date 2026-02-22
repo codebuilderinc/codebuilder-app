@@ -1,5 +1,5 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Link, Tabs } from 'expo-router';
+import { Tabs, usePathname, useRouter } from 'expo-router';
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: { name: React.ComponentProps<typeof FontAwesome>['name']; color: string }) {
@@ -7,6 +7,9 @@ function TabBarIcon(props: { name: React.ComponentProps<typeof FontAwesome>['nam
 }
 
 export default function TabLayout() {
+    const pathname = usePathname();
+    const router = useRouter();
+
     return (
         <Tabs
             screenOptions={{
@@ -38,10 +41,10 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen
-                name="cellular"
+                name="profile"
                 options={{
-                    title: 'Cellular',
-                    tabBarIcon: ({ color }: { color: string }) => <TabBarIcon name="phone" color={color} />,
+                    title: 'Profile',
+                    tabBarIcon: ({ color }: { color: string }) => <TabBarIcon name="user" color={color} />,
                 }}
             />
             <Tabs.Screen
@@ -49,6 +52,20 @@ export default function TabLayout() {
                 options={{
                     title: 'Permissions',
                     tabBarIcon: ({ color }: { color: string }) => <TabBarIcon name="shield" color={color} />,
+                }}
+                listeners={{
+                    tabPress: (e: { preventDefault: () => void }) => {
+                        // If already on a permissions sub-page (not the index), navigate to permissions index
+                        const isOnPermissionsSubPage = pathname.startsWith('/permissions/') && pathname !== '/permissions';
+                        const isOnPermissionsIndex = pathname === '/permissions' || pathname === '/(tabs)/permissions';
+                        
+                        if (isOnPermissionsSubPage || isOnPermissionsIndex) {
+                            // Prevent default tab behavior
+                            e.preventDefault();
+                            // Navigate to permissions index, replacing the current route to reset the stack
+                            router.replace('/(tabs)/permissions');
+                        }
+                    },
                 }}
             />
         </Tabs>

@@ -1,19 +1,22 @@
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import CustomHeader from '@/components/CustomHeader';
 
-const routes = [
-    { href: '/permissions/location', title: 'Location (foreground/background)' },
-    { href: '/permissions/camera-mic', title: 'Camera & Microphone' },
-    { href: '/permissions/notifications', title: 'Notifications' },
-    { href: '/permissions/media-storage', title: 'Media Library' },
-    { href: '/permissions/storage', title: 'Storage & File Access' },
-    { href: '/permissions/telephony-sms', title: 'Telephony & SMS' },
-    { href: '/permissions/connectivity', title: 'Bluetooth & Nearby' },
+const routes: Array<{ href: string; title: string; icon: string; color: string }> = [
+    { href: '/permissions/location', title: 'Location (foreground/background)', icon: '📍', color: '#4CAF50' },
+    { href: '/permissions/camera-mic', title: 'Camera & Microphone', icon: '📷', color: '#E91E63' },
+    { href: '/permissions/notifications', title: 'Notifications', icon: '🔔', color: '#FF9800' },
+    { href: '/permissions/media-storage', title: 'Media Library', icon: '🖼️', color: '#9C27B0' },
+    { href: '/permissions/storage', title: 'Storage & File Access', icon: '📁', color: '#00BCD4' },
+    { href: '/permissions/telephony-sms', title: 'Telephony & SMS', icon: '📱', color: '#F44336' },
+    { href: '/permissions/connectivity', title: 'Bluetooth & Nearby', icon: '📶', color: '#3F51B5' },
 ];
 
 export default function PermissionsHub() {
+    const router = useRouter();
+
     return (
         <View style={styles.container}>
             <CustomHeader title="Permissions Hub" />
@@ -24,12 +27,14 @@ export default function PermissionsHub() {
                 </Text>
                 {routes.map((route) => (
                     <View style={styles.card} key={route.href}>
-                        <Text style={styles.cardTitle}>{route.title}</Text>
-                        <Link href={route.href} asChild>
-                            <Pressable style={styles.button}>
-                                <Text style={styles.buttonText}>Open demo</Text>
-                            </Pressable>
-                        </Link>
+                        <Text style={styles.cardTitle}>{route.icon} {route.title}</Text>
+                        <Pressable
+                            style={[styles.button, { backgroundColor: route.color }]}
+                            onPress={() => router.push(route.href as any)}
+                        >
+                            <Text style={styles.buttonText}>Open demo</Text>
+                            <FontAwesome name="chevron-right" size={12} color="#fff" style={styles.buttonArrow} />
+                        </Pressable>
                     </View>
                 ))}
             </ScrollView>
@@ -53,8 +58,12 @@ const styles = StyleSheet.create({
     button: {
         backgroundColor: '#1e88e5',
         paddingVertical: 10,
+        paddingHorizontal: 16,
         borderRadius: 8,
+        flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
     },
-    buttonText: { color: '#fff', fontWeight: '600' },
+    buttonText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+    buttonArrow: { marginLeft: 8, marginTop: 2 },
 });
