@@ -273,12 +273,6 @@ export default function TelephonySmsPermissionDemo() {
         }
         setMakingCall(true);
         try {
-            const isSmsAvailable = await SMS.isAvailableAsync();
-            if (!isSmsAvailable) {
-                Alert.alert('Not Available', 'Phone calls are not available on this device');
-                return;
-            }
-
             // Use tel: URL scheme - this will open the dialer
             const url = `tel:${phoneNumber}`;
             const supported = await Linking.canOpenURL(url);
