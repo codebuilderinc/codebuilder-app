@@ -57,9 +57,8 @@ export default function TabLayout() {
                     tabPress: (e: { preventDefault: () => void }) => {
                         // If already on a permissions sub-page (not the index), navigate to permissions index
                         const isOnPermissionsSubPage = pathname.startsWith('/permissions/') && pathname !== '/permissions';
-                        const isOnPermissionsIndex = pathname === '/permissions' || pathname === '/(tabs)/permissions';
-                        
-                        if (isOnPermissionsSubPage || isOnPermissionsIndex) {
+
+                        if (isOnPermissionsSubPage) {
                             // Prevent default tab behavior
                             e.preventDefault();
                             // Navigate to permissions index, replacing the current route to reset the stack
