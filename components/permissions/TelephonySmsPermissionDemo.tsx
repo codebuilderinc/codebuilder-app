@@ -509,7 +509,7 @@ export default function TelephonySmsPermissionDemo() {
                         <FlatList
                             data={contacts}
                             renderItem={renderContactItem}
-                            keyExtractor={(item, index) => (item as any).id || `contact-${index}`}
+                            keyExtractor={(item, index) => item.id ?? `contact-${index}`}
                             style={styles.flatList}
                             onEndReached={() => loadContacts(true)}
                             onEndReachedThreshold={0.5}
