@@ -25,10 +25,7 @@ const SMS_PERMISSIONS = [
 ];
 
 // Contacts permissions
-const CONTACTS_PERMISSIONS = [
-    PermissionsAndroid.PERMISSIONS.READ_CONTACTS,
-    PermissionsAndroid.PERMISSIONS.WRITE_CONTACTS,
-];
+const CONTACTS_PERMISSIONS = [PermissionsAndroid.PERMISSIONS.READ_CONTACTS, PermissionsAndroid.PERMISSIONS.WRITE_CONTACTS];
 
 interface CellularInfoData {
     allowsVoip: boolean | null;
@@ -77,7 +74,7 @@ export default function TelephonySmsPermissionDemo() {
     const [smsMessages, setSmsMessages] = useState<SmsEntry[]>([]);
     const [phoneNumber, setPhoneNumber] = useState('');
     const [smsBody, setSmsBody] = useState('Test message from CodeBuilder');
-    
+
     // Loading states
     const [loadingPermissions, setLoadingPermissions] = useState(false);
     const [loadingCellular, setLoadingCellular] = useState(false);
@@ -102,12 +99,12 @@ export default function TelephonySmsPermissionDemo() {
         try {
             const allPermissions = [...TELEPHONY_PERMISSIONS, ...SMS_PERMISSIONS, ...CONTACTS_PERMISSIONS];
             const results: Record<string, string> = {};
-            
+
             for (const permission of allPermissions) {
                 const granted = await PermissionsAndroid.check(permission);
                 results[permission] = granted ? 'granted' : 'denied';
             }
-            
+
             setPermissionStatuses(results);
         } catch (error) {
             console.error('Error checking permissions:', error);
@@ -143,12 +140,12 @@ export default function TelephonySmsPermissionDemo() {
         try {
             // Request cellular permissions first
             await Cellular.requestPermissionsAsync();
-            
+
             // Request all telephony, SMS, and contacts permissions
             const allPermissions = [...TELEPHONY_PERMISSIONS, ...SMS_PERMISSIONS, ...CONTACTS_PERMISSIONS];
             const results = await PermissionsAndroid.requestMultiple(allPermissions);
             setPermissionStatuses(results);
-            
+
             // Refresh cellular info after permission grant
             await loadCellularInfo();
         } catch (error) {
@@ -183,9 +180,9 @@ export default function TelephonySmsPermissionDemo() {
                 }
 
                 const { data, hasNextPage, hasPreviousPage } = await Contacts.getContactsAsync(options);
-                
+
                 if (loadMore) {
-                    setContacts(prev => [...prev, ...data]);
+                    setContacts((prev) => [...prev, ...data]);
                 } else {
                     setContacts(data);
                 }
@@ -318,21 +315,25 @@ export default function TelephonySmsPermissionDemo() {
 
     const getCellularGenerationName = (gen: Cellular.CellularGeneration) => {
         switch (gen) {
-            case 0: return 'Unknown';
-            case 1: return '2G';
-            case 2: return '3G';
-            case 3: return '4G';
-            case 4: return '5G';
-            default: return 'Unknown';
+            case 0:
+                return 'Unknown';
+            case 1:
+                return '2G';
+            case 2:
+                return '3G';
+            case 3:
+                return '4G';
+            case 4:
+                return '5G';
+            default:
+                return 'Unknown';
         }
     };
 
     const renderContactItem = ({ item }: { item: Contact }) => (
         <View style={styles.listItem}>
             <Text style={styles.listItemTitle}>{item.name || 'No Name'}</Text>
-            {item.phoneNumbers && item.phoneNumbers.length > 0 && (
-                <Text style={styles.listItemSubtitle}>{item.phoneNumbers[0].number}</Text>
-            )}
+            {item.phoneNumbers && item.phoneNumbers.length > 0 && <Text style={styles.listItemSubtitle}>{item.phoneNumbers[0].number}</Text>}
         </View>
     );
 
@@ -351,7 +352,9 @@ export default function TelephonySmsPermissionDemo() {
             <Text style={styles.listItemSubtitle} numberOfLines={2}>
                 {item.body}
             </Text>
-            <Text style={styles.listItemMeta}>{item.type} • {new Date(item.date).toLocaleString()}</Text>
+            <Text style={styles.listItemMeta}>
+                {item.type} • {new Date(item.date).toLocaleString()}
+            </Text>
         </View>
     );
 
@@ -370,16 +373,12 @@ export default function TelephonySmsPermissionDemo() {
             {/* Header */}
             <Text style={styles.title}>Telephony, SMS & Contacts</Text>
             <Text style={styles.copy}>
-                This page combines cellular information, telephony permissions, SMS capabilities, contacts access, and call log functionality.
-                Request all permissions to unlock full functionality.
+                This page combines cellular information, telephony permissions, SMS capabilities, contacts access, and call log functionality. Request all permissions to unlock
+                full functionality.
             </Text>
 
             {/* Main Permission Request Button */}
-            <Pressable 
-                style={[styles.mainButton, loadingPermissions && styles.buttonDisabled]} 
-                onPress={requestAllPermissions} 
-                disabled={loadingPermissions}
-            >
+            <Pressable style={[styles.mainButton, loadingPermissions && styles.buttonDisabled]} onPress={requestAllPermissions} disabled={loadingPermissions}>
                 {loadingPermissions ? (
                     <View style={styles.buttonContent}>
                         <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
@@ -420,11 +419,7 @@ export default function TelephonySmsPermissionDemo() {
                     <InfoRow label="Mobile Network Code" value={cellularInfo.mobileNetworkCode || 'N/A'} />
                     <InfoRow label="Permission Status" value={cellularInfo.permission?.status || 'N/A'} />
                 </View>
-                <Pressable 
-                    style={[styles.actionButton, styles.refreshButton, loadingCellular && styles.buttonDisabled]}
-                    onPress={loadCellularInfo}
-                    disabled={loadingCellular}
-                >
+                <Pressable style={[styles.actionButton, styles.refreshButton, loadingCellular && styles.buttonDisabled]} onPress={loadCellularInfo} disabled={loadingCellular}>
                     {loadingCellular ? (
                         <View style={styles.buttonContent}>
                             <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
@@ -448,11 +443,7 @@ export default function TelephonySmsPermissionDemo() {
                     keyboardType="phone-pad"
                 />
                 <View style={styles.buttonRow}>
-                    <Pressable 
-                        style={[styles.actionButton, styles.callButton, makingCall && styles.buttonDisabled]} 
-                        onPress={makeCall}
-                        disabled={makingCall}
-                    >
+                    <Pressable style={[styles.actionButton, styles.callButton, makingCall && styles.buttonDisabled]} onPress={makeCall} disabled={makingCall}>
                         {makingCall ? (
                             <View style={styles.buttonContent}>
                                 <ActivityIndicator size="small" color="#fff" style={{ marginRight: 4 }} />
@@ -462,11 +453,7 @@ export default function TelephonySmsPermissionDemo() {
                             <Text style={styles.actionButtonText}>📞 Call</Text>
                         )}
                     </Pressable>
-                    <Pressable 
-                        style={[styles.actionButton, styles.smsButton, sendingSms && styles.buttonDisabled]} 
-                        onPress={sendSms}
-                        disabled={sendingSms}
-                    >
+                    <Pressable style={[styles.actionButton, styles.smsButton, sendingSms && styles.buttonDisabled]} onPress={sendSms} disabled={sendingSms}>
                         {sendingSms ? (
                             <View style={styles.buttonContent}>
                                 <ActivityIndicator size="small" color="#fff" style={{ marginRight: 4 }} />
@@ -490,7 +477,7 @@ export default function TelephonySmsPermissionDemo() {
             {/* Contacts */}
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>👥 Contacts</Text>
-                <Pressable 
+                <Pressable
                     style={[styles.actionButton, styles.contactsButton, loadingContacts && styles.buttonDisabled]}
                     onPress={() => loadContacts(false)}
                     disabled={loadingContacts}
@@ -509,7 +496,7 @@ export default function TelephonySmsPermissionDemo() {
                         <FlatList
                             data={contacts}
                             renderItem={renderContactItem}
-                            keyExtractor={(item, index) => item.id ?? `contact-${index}`}
+                            keyExtractor={(item, index) => `contact-${index}`}
                             style={styles.flatList}
                             onEndReached={() => loadContacts(true)}
                             onEndReachedThreshold={0.5}
@@ -522,11 +509,7 @@ export default function TelephonySmsPermissionDemo() {
             {/* Call Logs */}
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>📋 Call Logs</Text>
-                <Pressable 
-                    style={[styles.actionButton, styles.callLogsButton, loadingCallLogs && styles.buttonDisabled]}
-                    onPress={loadCallLogs}
-                    disabled={loadingCallLogs}
-                >
+                <Pressable style={[styles.actionButton, styles.callLogsButton, loadingCallLogs && styles.buttonDisabled]} onPress={loadCallLogs} disabled={loadingCallLogs}>
                     {loadingCallLogs ? (
                         <View style={styles.buttonContent}>
                             <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
@@ -538,12 +521,7 @@ export default function TelephonySmsPermissionDemo() {
                 </Pressable>
                 {callLogs.length > 0 && (
                     <View style={styles.flatListContainer}>
-                        <FlatList
-                            data={callLogs}
-                            renderItem={renderCallLogItem}
-                            keyExtractor={(item) => item.id}
-                            style={styles.flatList}
-                        />
+                        <FlatList data={callLogs} renderItem={renderCallLogItem} keyExtractor={(item) => item.id} style={styles.flatList} />
                     </View>
                 )}
             </View>
@@ -551,11 +529,7 @@ export default function TelephonySmsPermissionDemo() {
             {/* SMS Messages */}
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>💬 SMS Messages</Text>
-                <Pressable 
-                    style={[styles.actionButton, styles.smsMessagesButton, loadingSms && styles.buttonDisabled]}
-                    onPress={loadSmsMessages}
-                    disabled={loadingSms}
-                >
+                <Pressable style={[styles.actionButton, styles.smsMessagesButton, loadingSms && styles.buttonDisabled]} onPress={loadSmsMessages} disabled={loadingSms}>
                     {loadingSms ? (
                         <View style={styles.buttonContent}>
                             <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
@@ -567,12 +541,7 @@ export default function TelephonySmsPermissionDemo() {
                 </Pressable>
                 {smsMessages.length > 0 && (
                     <View style={styles.flatListContainer}>
-                        <FlatList
-                            data={smsMessages}
-                            renderItem={renderSmsItem}
-                            keyExtractor={(item) => item.id}
-                            style={styles.flatList}
-                        />
+                        <FlatList data={smsMessages} renderItem={renderSmsItem} keyExtractor={(item) => item.id} style={styles.flatList} />
                     </View>
                 )}
             </View>
@@ -581,11 +550,8 @@ export default function TelephonySmsPermissionDemo() {
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>📝 Notes</Text>
                 <Text style={styles.noteText}>
-                    • Telephony permissions require Play Store declarations{'\n'}
-                    • Call log and SMS reading require native modules in production{'\n'}
-                    • Some features may not work on emulators{'\n'}
-                    • SMS/Call permissions are highly restricted by Google Play{'\n'}
-                    • Phone calls and SMS will open device default apps
+                    • Telephony permissions require Play Store declarations{'\n'}• Call log and SMS reading require native modules in production{'\n'}• Some features may not work
+                    on emulators{'\n'}• SMS/Call permissions are highly restricted by Google Play{'\n'}• Phone calls and SMS will open device default apps
                 </Text>
             </View>
         </ScrollView>
