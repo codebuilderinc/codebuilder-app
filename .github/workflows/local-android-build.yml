@@ -1,0 +1,266 @@
+name: 🏗️ Local Android Build (Self-Hosted)
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["**"]
+    paths:
+      - '.github/workflows/local-android-build.yml'  # Allow manual re-runs of this workflow
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  build-android-local:
+    name: 🔨 Build Android APK (Local Gradle)
+    runs-on: self-hosted  # Use your self-hosted runner / local machine
+    outputs:
+      app_version: ${{ steps.version-control.outputs.app_version }}
+      build_number: ${{ steps.version-control.outputs.build_number }}
+      build_date: ${{ steps.version-control.outputs.build_date }}
+      is_production: ${{ steps.version-control.outputs.is_production }}
+      branch_name: ${{ steps.extract-branch.outputs.branch_name }}
+    steps:
+      # ========================
+      # 🛠️ Repository Setup
+      # ========================
+      - name: "📦 Checkout (Full History)"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "🔍 Extract branch name"
+        id: extract-branch
+        shell: bash
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "Branch: $BRANCH_NAME"
+
+      # ========================
+      # ⚙️ Environment Configuration
+      # ========================
+      - name: "📦 Setup Node.js 22.x"
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: "npm"
+
+      - name: "🧩 Install dependencies"
+        run: npm ci --legacy-peer-deps
+
+      # ========================
+      # 🔄 Version Management
+      # ========================
+      - name: "🔄 Update Production Version"
+        if: github.ref == 'refs/heads/main'
+        run: node scripts/bumpVersion.js
+
+      - name: "🔧 Configure Git for Automation"
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: "💾 Commit Version Update"
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git add version.json
+          git commit -m "chore: Auto-increment version [skip ci]" || true
+          git push || true
+
+      # ========================
+      # 📌 Version Setup
+      # ========================
+      - name: "🏷️ Set Build Versions"
+        id: version-control
+        run: |
+          # Use version from version.json
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            APP_VERSION=$(jq -r '.version' version.json)
+            IS_PRODUCTION="true"
+          else
+            # For non-main branches, create a prerelease version with branch name
+            BRANCH_NAME=${{ steps.extract-branch.outputs.branch_name }}
+            SANITIZED_BRANCH=$(echo "$BRANCH_NAME" | sed 's/[^a-zA-Z0-9]/-/g')
+            # Get base version from version.json
+            BASE_VERSION=$(jq -r '.version' version.json)
+            APP_VERSION="${BASE_VERSION}-pre.${SANITIZED_BRANCH}.${{ github.run_number }}"
+            IS_PRODUCTION="false"
+          fi
+
+          # Generate build identifiers
+          BUILD_NUMBER="${{ github.run_id }}"
+          BUILD_DATE=$(date +'%Y%m%d-%H%M%S')
+
+          # Set outputs for downstream jobs
+          echo "app_version=$APP_VERSION" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+          echo "is_production=$IS_PRODUCTION" >> $GITHUB_OUTPUT
+
+          # Export environment variables
+          echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
+          echo "BUILD_DATE=$BUILD_DATE" >> $GITHUB_ENV
+
+      # ========================
+      # 🛠️ Android SDK Check
+      # ========================
+      - name: "🔍 Verify Android SDK"
+        run: |
+          if [ -z "$ANDROID_HOME" ]; then
+            echo "❌ Error: ANDROID_HOME not set!"
+            echo "Please ensure Android SDK is installed and ANDROID_HOME is configured on your self-hosted runner"
+            exit 1
+          fi
+          echo "✅ ANDROID_HOME: $ANDROID_HOME"
+          echo "✅ Checking for gradle wrapper..."
+          ls -la android/gradlew || echo "⚠️  No gradle wrapper found, will use globally installed gradle"
+
+      # ========================
+      # 🏗️ Build Execution
+      # ========================
+      - name: "🚀 Prepare Expo Bundle"
+        run: |
+          echo "📦 Creating Expo bundle for embedded use..."
+          npm run prepare
+
+      - name: "🔧 Make Gradle Wrapper Executable"
+        run: |
+          chmod +x android/gradlew
+
+      - name: "🏗️ Build Release APK with Gradle"
+        run: |
+          cd android
+          ./gradlew clean assembleRelease \
+            -x bundleRelease \
+            --no-daemon \
+            -Dorg.gradle.jvmargs=-Xmx4096m
+          cd ..
+          echo "✅ Build completed successfully!"
+
+      # ========================
+      # 📦 APK Verification & Naming
+      # ========================
+      - name: "📍 Locate APK Output"
+        id: apk-path
+        run: |
+          APK_FILE=$(find android/app/build/outputs/apk -name "*.apk" -type f | head -1)
+          if [ -z "$APK_FILE" ]; then
+            echo "❌ Error: No APK file generated!"
+            find android/app/build -name "*.apk" -o -name "*.aab" 2>/dev/null
+            exit 1
+          fi
+          echo "✅ Found APK: $APK_FILE"
+          echo "APK_PATH=$APK_FILE" >> $GITHUB_OUTPUT
+          ls -lh "$APK_FILE"
+
+      - name: "✏️ Rename APK with Version"
+        id: final-apk
+        run: |
+          SOURCE_APK="${{ steps.apk-path.outputs.APK_PATH }}"
+          DEST_APK="app-release-${{ env.APP_VERSION }}-build-${{ env.BUILD_NUMBER }}.apk"
+          cp "$SOURCE_APK" "$DEST_APK"
+          echo "FINAL_APK=$DEST_APK" >> $GITHUB_OUTPUT
+          echo "✅ Final APK: $DEST_APK"
+          ls -lh "$DEST_APK"
+
+      # ========================
+      # 📤 Artifact Upload
+      # ========================
+      - name: "📤 Upload APK Artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk-local
+          path: app-release-${{ env.APP_VERSION }}-build-${{ env.BUILD_NUMBER }}.apk
+          retention-days: 14
+
+  create-release:
+    name: "🚀 Create GitHub Release"
+    runs-on: ubuntu-latest
+    needs: build-android-local
+    steps:
+      # ========================
+      # 📥 Artifact Retrieval
+      # ========================
+      - name: "📦 Checkout Repository"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "📥 Download APK Artifact"
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apk-local
+
+      # ========================
+      # 📜 Changelog Generation
+      # ========================
+      - name: "📋 Create Release Notes"
+        id: changelog
+        run: |
+          echo "📝 Generating changelog from git history..."
+          CHANGELOG=$(git log --oneline --no-decorate -n 20 | sed 's/^/- /')
+          echo "$CHANGELOG" > changelog.txt
+
+          # Format for GitHub release body
+          {
+            echo "## Release: ${{ needs.build-android-local.outputs.app_version }}"
+            echo ""
+            echo "**Build Info:**"
+            echo "- Build Number: ${{ needs.build-android-local.outputs.build_number }}"
+            echo "- Build Date: ${{ needs.build-android-local.outputs.build_date }}"
+            echo "- Branch: ${{ needs.build-android-local.outputs.branch_name }}"
+            echo ""
+            echo "**Recent Changes:**"
+            cat changelog.txt
+          } > release-body.txt
+
+      # ========================
+      # 🏷️ Release Creation
+      # ========================
+      - name: "🎚️ Determine Release Type"
+        id: release-type
+        run: |
+          echo "🔍 Detecting release type..."
+          if [ "${{ needs.build-android-local.outputs.is_production }}" = "true" ]; then
+            echo "🟢 Production release detected"
+            RELEASE_TAG="v${{ needs.build-android-local.outputs.app_version }}"
+            RELEASE_TITLE="📱 Production Release v${{ needs.build-android-local.outputs.app_version }} (Local Build)"
+          else
+            echo "🟡 Pre-release build detected"
+            BRANCH_NAME="${{ needs.build-android-local.outputs.branch_name }}"
+            RELEASE_TAG="prerelease-local-${BRANCH_NAME}-${{ needs.build-android-local.outputs.build_date }}"
+            RELEASE_TITLE="📱 Pre-release (${BRANCH_NAME}) v${{ needs.build-android-local.outputs.app_version }} (Local Build)"
+          fi
+          echo "RELEASE_TAG=${RELEASE_TAG}" >> $GITHUB_OUTPUT
+          echo "RELEASE_TITLE=${RELEASE_TITLE}" >> $GITHUB_OUTPUT
+
+      - name: "🎉 Publish GitHub Release"
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release-type.outputs.RELEASE_TAG }}
+          name: ${{ steps.release-type.outputs.RELEASE_TITLE }}
+          body_path: release-body.txt
+          files: app-release-${{ needs.build-android-local.outputs.app_version }}-build-${{ needs.build-android-local.outputs.build_number }}.apk
+          prerelease: ${{ needs.build-android-local.outputs.is_production != 'true' }}
+          
+  notify-completion:
+    name: "✅ Build Completion Notification"
+    runs-on: ubuntu-latest
+    needs: [build-android-local, create-release]
+    if: always()
+    steps:
+      - name: "📢 Build Status"
+        run: |
+          if [ "${{ needs.build-android-local.result }}" = "success" ] && [ "${{ needs.create-release.result }}" = "success" ]; then
+            echo "✅ BUILD SUCCESSFUL!"
+            echo "📱 APK Version: ${{ needs.build-android-local.outputs.app_version }}"
+            echo "📦 Build completed without Expo.dev charges"
+          else
+            echo "❌ BUILD FAILED"
+            exit 1
+          fi
