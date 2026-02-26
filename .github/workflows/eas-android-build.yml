@@ -1,367 +1,367 @@
 name: 🚀 EAS Android Build & Smart Release
 permissions:
-  contents: write
+    contents: write
 
 on:
-  push:
-    branches: ["**"] # Run on all branches
-  workflow_dispatch:
+    push:
+        branches: ['main'] # ["**"] # Run on all branches
+    workflow_dispatch:
 
 env:
-  EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  build-android:
-    name: 🔨 Build Android - Version Manager
-    runs-on: ubuntu-latest
-    outputs:
-      build_id: ${{ steps.build.outputs.BUILD_ID }}
-      app_version: ${{ steps.version-control.outputs.app_version }}
-      build_number: ${{ steps.version-control.outputs.build_number }}
-      build_date: ${{ steps.version-control.outputs.build_date }}
-      is_production: ${{ steps.version-control.outputs.is_production }}
-      branch_name: ${{ steps.extract-branch.outputs.branch_name }}
-    steps:
-      # ========================
-      # 🛠️ Repository Setup
-      # ========================
-      - name: "📦 Checkout (Full History)"
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    build-android:
+        name: 🔨 Build Android - Version Manager
+        runs-on: ubuntu-latest
+        outputs:
+            build_id: ${{ steps.build.outputs.BUILD_ID }}
+            app_version: ${{ steps.version-control.outputs.app_version }}
+            build_number: ${{ steps.version-control.outputs.build_number }}
+            build_date: ${{ steps.version-control.outputs.build_date }}
+            is_production: ${{ steps.version-control.outputs.is_production }}
+            branch_name: ${{ steps.extract-branch.outputs.branch_name }}
+        steps:
+            # ========================
+            # 🛠️ Repository Setup
+            # ========================
+            - name: '📦 Checkout (Full History)'
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
-      - name: "🔍 Extract branch name"
-        id: extract-branch
-        shell: bash
-        run: |
-          BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
-          echo "Branch: $BRANCH_NAME"
+            - name: '🔍 Extract branch name'
+              id: extract-branch
+              shell: bash
+              run: |
+                  BRANCH_NAME=${GITHUB_REF#refs/heads/}
+                  echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+                  echo "Branch: $BRANCH_NAME"
 
-      # ========================
-      # ⚙️ Environment Configuration
-      # ========================
-      - name: "📦 Setup Node.js 20.x"
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-          cache: "npm"
+            # ========================
+            # ⚙️ Environment Configuration
+            # ========================
+            - name: '📦 Setup Node.js 20.x'
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20.x
+                  cache: 'npm'
 
-      - name: "🧩 Install dependencies (ci)"
-        run: npm ci --legacy-peer-deps
+            - name: '🧩 Install dependencies (ci)'
+              run: npm ci --legacy-peer-deps
 
-      # ========================
-      # 🔄 Version Management
-      # ========================
-      - name: "🔄 Update Production Version"
-        if: github.ref == 'refs/heads/main'
-        run: node scripts/bumpVersion.js
+            # ========================
+            # 🔄 Version Management
+            # ========================
+            - name: '🔄 Update Production Version'
+              if: github.ref == 'refs/heads/main'
+              run: node scripts/bumpVersion.js
 
-      - name: "🔧 Configure Git for Automation"
-        if: github.ref == 'refs/heads/main'
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
+            - name: '🔧 Configure Git for Automation'
+              if: github.ref == 'refs/heads/main'
+              run: |
+                  git config --global user.name "GitHub Actions"
+                  git config --global user.email "actions@github.com"
 
-      - name: "💾 Commit Version Update"
-        if: github.ref == 'refs/heads/main'
-        run: |
-          git add version.json
-          git commit -m "chore: Auto-increment version [skip ci]"
-          git push
+            - name: '💾 Commit Version Update'
+              if: github.ref == 'refs/heads/main'
+              run: |
+                  git add version.json
+                  git commit -m "chore: Auto-increment version [skip ci]"
+                  git push
 
-      # ========================
-      # 📌 Version Tagging
-      # ========================
-      - name: "🏷️ Set CI/CD Versions"
-        id: version-control
-        run: |
-          # Use version from version.json (requires jq)
-          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            APP_VERSION=$(jq -r '.version' version.json)
-            IS_PRODUCTION="true"
-          else
-            # For non-main branches, create a prerelease version with branch name
-            BRANCH_NAME=${{ steps.extract-branch.outputs.branch_name }}
-            SANITIZED_BRANCH=$(echo "$BRANCH_NAME" | sed 's/[^a-zA-Z0-9]/-/g')
-            # Get base version from version.json
-            BASE_VERSION=$(jq -r '.version' version.json)
-            APP_VERSION="${BASE_VERSION}-pre.${SANITIZED_BRANCH}.${{ github.run_number }}"
-            IS_PRODUCTION="false"
-          fi
+            # ========================
+            # 📌 Version Tagging
+            # ========================
+            - name: '🏷️ Set CI/CD Versions'
+              id: version-control
+              run: |
+                  # Use version from version.json (requires jq)
+                  if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+                    APP_VERSION=$(jq -r '.version' version.json)
+                    IS_PRODUCTION="true"
+                  else
+                    # For non-main branches, create a prerelease version with branch name
+                    BRANCH_NAME=${{ steps.extract-branch.outputs.branch_name }}
+                    SANITIZED_BRANCH=$(echo "$BRANCH_NAME" | sed 's/[^a-zA-Z0-9]/-/g')
+                    # Get base version from version.json
+                    BASE_VERSION=$(jq -r '.version' version.json)
+                    APP_VERSION="${BASE_VERSION}-pre.${SANITIZED_BRANCH}.${{ github.run_number }}"
+                    IS_PRODUCTION="false"
+                  fi
 
-          # Generate build identifiers
-          BUILD_NUMBER="${{ github.run_id }}"
-          BUILD_DATE=$(date +'%Y%m%d-%H%M%S')
+                  # Generate build identifiers
+                  BUILD_NUMBER="${{ github.run_id }}"
+                  BUILD_DATE=$(date +'%Y%m%d-%H%M%S')
 
-          # Set outputs for downstream jobs
-          echo "app_version=$APP_VERSION" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
-          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "is_production=$IS_PRODUCTION" >> $GITHUB_OUTPUT
+                  # Set outputs for downstream jobs
+                  echo "app_version=$APP_VERSION" >> $GITHUB_OUTPUT
+                  echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+                  echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+                  echo "is_production=$IS_PRODUCTION" >> $GITHUB_OUTPUT
 
-          # Export environment variables
-          echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
-          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
-          echo "BUILD_DATE=$BUILD_DATE" >> $GITHUB_ENV
+                  # Export environment variables
+                  echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
+                  echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
+                  echo "BUILD_DATE=$BUILD_DATE" >> $GITHUB_ENV
 
-      # ========================
-      # 🔐 EAS Setup & Auth
-      # ========================
-      - name: "⚙️ Install EAS CLI"
-        run: npm install -g eas-cli@latest
+            # ========================
+            # 🔐 EAS Setup & Auth
+            # ========================
+            - name: '⚙️ Install EAS CLI'
+              run: npm install -g eas-cli@latest
 
-      - name: "🔐 Verify Expo Credentials"
-        run: npx eas whoami --token $EXPO_TOKEN
+            - name: '🔐 Verify Expo Credentials'
+              run: npx eas whoami --token $EXPO_TOKEN
 
-      # ========================
-      # 🏗️ Build Execution
-      # ========================
-      - name: "🚀 Trigger EAS Build"
-        id: build
-        run: |
-          echo "🔄 Initializing build process..."
-          sudo apt-get install -y jq
+            # ========================
+            # 🏗️ Build Execution
+            # ========================
+            - name: '🚀 Trigger EAS Build'
+              id: build
+              run: |
+                  echo "🔄 Initializing build process..."
+                  sudo apt-get install -y jq
 
-          # Choose profile based on branch
-          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            BUILD_PROFILE="production"
-          else
-            BUILD_PROFILE="preview"  # Use a different profile for pre-releases if needed
-          fi
+                  # Choose profile based on branch
+                  if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+                    BUILD_PROFILE="production"
+                  else
+                    BUILD_PROFILE="preview"  # Use a different profile for pre-releases if needed
+                  fi
 
-          echo "Using build profile: $BUILD_PROFILE"
+                  echo "Using build profile: $BUILD_PROFILE"
 
-          # Ensure Gradle wrapper is staged under build/android for EAS upload
-          echo "Copying gradle wrapper into build/android (if present)"
-          node scripts/fixGradleWrapper.js || true
+                  # Ensure Gradle wrapper is staged under build/android for EAS upload
+                  echo "Copying gradle wrapper into build/android (if present)"
+                  node scripts/fixGradleWrapper.js || true
 
-          # Commit generated build files so EAS (which uses the git tree) includes them
-          git config user.email "actions@github.com"
-          git config user.name "GitHub Actions"
-          git add build/android || true
-          git commit -m "chore(ci): include gradle wrapper for EAS build [skip ci]" || true
+                  # Commit generated build files so EAS (which uses the git tree) includes them
+                  git config user.email "actions@github.com"
+                  git config user.name "GitHub Actions"
+                  git add build/android || true
+                  git commit -m "chore(ci): include gradle wrapper for EAS build [skip ci]" || true
 
-          BUILD_JSON=$(npx eas build -p android --profile $BUILD_PROFILE --non-interactive --json)
-          echo "Raw build output: $BUILD_JSON"
-          BUILD_ID=$(echo "$BUILD_JSON" | jq -r '.[0].id')
-          if [[ -z "$BUILD_ID" || "$BUILD_ID" == "null" ]]; then
-            echo "Error: Failed to retrieve BUILD_ID!"
-            exit 1
-          fi
-          echo "EAS Build started with ID: $BUILD_ID"
-          echo "BUILD_ID=$BUILD_ID" >> $GITHUB_ENV
-          echo "BUILD_ID=$BUILD_ID" >> $GITHUB_OUTPUT
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+                  BUILD_JSON=$(npx eas build -p android --profile $BUILD_PROFILE --non-interactive --json)
+                  echo "Raw build output: $BUILD_JSON"
+                  BUILD_ID=$(echo "$BUILD_JSON" | jq -r '.[0].id')
+                  if [[ -z "$BUILD_ID" || "$BUILD_ID" == "null" ]]; then
+                    echo "Error: Failed to retrieve BUILD_ID!"
+                    exit 1
+                  fi
+                  echo "EAS Build started with ID: $BUILD_ID"
+                  echo "BUILD_ID=$BUILD_ID" >> $GITHUB_ENV
+                  echo "BUILD_ID=$BUILD_ID" >> $GITHUB_OUTPUT
+              env:
+                  EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
-  download-apk:
-    name: "📥 APK Artifact Handler"
-    runs-on: ubuntu-latest
-    needs: build-android
-    outputs:
-      apk_path: ${{ steps.download.outputs.APK_PATH }}
-    steps:
-      # ========================
-      # 🛠️ Environment Setup
-      # ========================
-      - name: "📦 Checkout Repository"
-        uses: actions/checkout@v4
+    download-apk:
+        name: '📥 APK Artifact Handler'
+        runs-on: ubuntu-latest
+        needs: build-android
+        outputs:
+            apk_path: ${{ steps.download.outputs.APK_PATH }}
+        steps:
+            # ========================
+            # 🛠️ Environment Setup
+            # ========================
+            - name: '📦 Checkout Repository'
+              uses: actions/checkout@v4
 
-      - name: "⚙️ Setup Node.js"
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
+            - name: '⚙️ Setup Node.js'
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20.x
 
-      - name: "📦 Install Dependencies"
-        run: npm ci
+            - name: '📦 Install Dependencies'
+              run: npm ci
 
-      # ========================
-      # 📦 Dependency Management
-      # ========================
-      - name: "🧰 Install Build Tools"
-        run: |
-          npm install -g eas-cli@latest
-          sudo apt-get update
-          sudo apt-get install -y jq curl dotenv
+            # ========================
+            # 📦 Dependency Management
+            # ========================
+            - name: '🧰 Install Build Tools'
+              run: |
+                  npm install -g eas-cli@latest
+                  sudo apt-get update
+                  sudo apt-get install -y jq curl dotenv
 
-      # ========================
-      # 🔍 Build Monitoring
-      # ========================
-      - name: "⏳ Wait for Build Completion"
-        run: |
-          echo "⏰ Monitoring build status..."
-          cd $GITHUB_WORKSPACE
-          BUILD_ID=${{ needs.build-android.outputs.build_id }}
-          echo "🔍 Starting build monitoring for BUILD_ID: $BUILD_ID"
+            # ========================
+            # 🔍 Build Monitoring
+            # ========================
+            - name: '⏳ Wait for Build Completion'
+              run: |
+                  echo "⏰ Monitoring build status..."
+                  cd $GITHUB_WORKSPACE
+                  BUILD_ID=${{ needs.build-android.outputs.build_id }}
+                  echo "🔍 Starting build monitoring for BUILD_ID: $BUILD_ID"
 
-          # Initial check without JSON for better error visibility
-          npx eas build:view $BUILD_ID || true
+                  # Initial check without JSON for better error visibility
+                  npx eas build:view $BUILD_ID || true
 
-          RETRY_COUNT=0
-          MAX_RETRIES=120
-          SLEEP_TIME=30
+                  RETRY_COUNT=0
+                  MAX_RETRIES=120
+                  SLEEP_TIME=30
 
-          while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
-            echo -e "\n=== Attempt $((RETRY_COUNT+1))/$MAX_RETRIES ==="
-            
-            # Fetch build status in JSON format
-            BUILD_STATUS_JSON=$(npx eas build:view --json $BUILD_ID)
-            echo "📄 Raw API response: $BUILD_STATUS_JSON"
+                  while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
+                    echo -e "\n=== Attempt $((RETRY_COUNT+1))/$MAX_RETRIES ==="
+                    
+                    # Fetch build status in JSON format
+                    BUILD_STATUS_JSON=$(npx eas build:view --json $BUILD_ID)
+                    echo "📄 Raw API response: $BUILD_STATUS_JSON"
 
-            # Validate JSON and check for empty response
-            if ! echo "$BUILD_STATUS_JSON" | jq empty >/dev/null 2>&1 || [[ -z "$BUILD_STATUS_JSON" ]]; then
-              echo "❌ Error: Invalid or empty response from EAS API! Retrying..."
-              RETRY_COUNT=$((RETRY_COUNT+1))
-              sleep $SLEEP_TIME
-              continue
-            fi
+                    # Validate JSON and check for empty response
+                    if ! echo "$BUILD_STATUS_JSON" | jq empty >/dev/null 2>&1 || [[ -z "$BUILD_STATUS_JSON" ]]; then
+                      echo "❌ Error: Invalid or empty response from EAS API! Retrying..."
+                      RETRY_COUNT=$((RETRY_COUNT+1))
+                      sleep $SLEEP_TIME
+                      continue
+                    fi
 
-            BUILD_STATUS=$(echo "$BUILD_STATUS_JSON" | jq -r '.status')
-            ERROR_MESSAGE=$(echo "$BUILD_STATUS_JSON" | jq -r '.error.message // empty')
+                    BUILD_STATUS=$(echo "$BUILD_STATUS_JSON" | jq -r '.status')
+                    ERROR_MESSAGE=$(echo "$BUILD_STATUS_JSON" | jq -r '.error.message // empty')
 
-            echo "🔍 Parsed status: $BUILD_STATUS"
-            [[ -n "$ERROR_MESSAGE" ]] && echo "❌ Error message: $ERROR_MESSAGE"
+                    echo "🔍 Parsed status: $BUILD_STATUS"
+                    [[ -n "$ERROR_MESSAGE" ]] && echo "❌ Error message: $ERROR_MESSAGE"
 
-            case $BUILD_STATUS in
-              "FINISHED")
-                APK_URL=$(echo "$BUILD_STATUS_JSON" | jq -r '.artifacts.buildUrl')
-                if [[ -z "$APK_URL" || "$APK_URL" == "null" ]]; then
-                  echo "❌ Error: Successful build but no APK URL found!"
+                    case $BUILD_STATUS in
+                      "FINISHED")
+                        APK_URL=$(echo "$BUILD_STATUS_JSON" | jq -r '.artifacts.buildUrl')
+                        if [[ -z "$APK_URL" || "$APK_URL" == "null" ]]; then
+                          echo "❌ Error: Successful build but no APK URL found!"
+                          exit 1
+                        fi
+                        echo "✅ APK_URL=$APK_URL" >> $GITHUB_ENV
+                        exit 0
+                        ;;
+
+                      "ERRORED"|"CANCELLED")
+                        echo "❌ Build failed! Error details:"
+                        echo "$BUILD_STATUS_JSON" | jq .
+                        exit 1
+                        ;;
+
+                      "NEW"|"IN_QUE"|"IN_PROGRESS"|"PENDING")
+                        echo "⏳ Build is still in progress..."
+                        ;;
+
+                      *)
+                        echo "❌ Unknown build status: $BUILD_STATUS"
+                        exit 1
+                        ;;
+                    esac
+
+                    RETRY_COUNT=$((RETRY_COUNT+1))
+                    sleep $SLEEP_TIME
+                  done
+
+                  echo "❌ Error: Build did not complete within the expected time!"
                   exit 1
-                fi
-                echo "✅ APK_URL=$APK_URL" >> $GITHUB_ENV
-                exit 0
-                ;;
+              env:
+                  EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
-              "ERRORED"|"CANCELLED")
-                echo "❌ Build failed! Error details:"
-                echo "$BUILD_STATUS_JSON" | jq .
-                exit 1
-                ;;
+            # ========================
+            # 📦 Artifact Handling
+            # ========================
+            - name: '📥 Download APK'
+              id: download
+              run: |
+                  echo "🔽 Retrieving APK URL..."
+                  # Use the build:view command to get a clean JSON response
+                  APK_URL=$(npx eas build:view --json ${{ needs.build-android.outputs.build_id }} | jq -r '.artifacts.buildUrl')
+                  if [[ -z "$APK_URL" || "$APK_URL" == "null" ]]; then
+                    echo "❌ Error: No APK URL found!"
+                    exit 1
+                  fi
+                  echo "📥 Downloading APK from $APK_URL..."
+                  curl -L "$APK_URL" -o app-release.apk
+                  echo "APK_PATH=app-release.apk" >> $GITHUB_OUTPUT
 
-              "NEW"|"IN_QUE"|"IN_PROGRESS"|"PENDING")
-                echo "⏳ Build is still in progress..."
-                ;;
+            - name: '📤 Upload Artifact'
+              uses: actions/upload-artifact@v4
+              with:
+                  name: android-apk
+                  path: app-release.apk
 
-              *)
-                echo "❌ Unknown build status: $BUILD_STATUS"
-                exit 1
-                ;;
-            esac
+    generate-changelog:
+        name: '📜 Changelog Generator'
+        runs-on: ubuntu-latest
+        needs: build-android
+        outputs:
+            changelog: ${{ steps.changelog.outputs.CHANGELOG }}
+        steps:
+            # ========================
+            # 🛠️ Repository Setup
+            # ========================
+            - name: '📂 Checkout with Full History'
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
-            RETRY_COUNT=$((RETRY_COUNT+1))
-            sleep $SLEEP_TIME
-          done
+            # ========================
+            # 📄 Changelog Generation
+            # ========================
+            - name: '📋 Create Release Notes'
+              id: changelog
+              run: |
+                  echo "📝 Generating changelog from git history..."
+                  CHANGELOG=$(git log --pretty=format:"- %s (%h) by %an" -n 15)
+                  echo "$CHANGELOG" > changelog.txt
 
-          echo "❌ Error: Build did not complete within the expected time!"
-          exit 1
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+                  delimiter=$(openssl rand -hex 6)
+                  echo "CHANGELOG<<${delimiter}" >> $GITHUB_OUTPUT
+                  cat changelog.txt >> $GITHUB_OUTPUT
+                  echo "${delimiter}" >> $GITHUB_OUTPUT
 
-      # ========================
-      # 📦 Artifact Handling
-      # ========================
-      - name: "📥 Download APK"
-        id: download
-        run: |
-          echo "🔽 Retrieving APK URL..."
-          # Use the build:view command to get a clean JSON response
-          APK_URL=$(npx eas build:view --json ${{ needs.build-android.outputs.build_id }} | jq -r '.artifacts.buildUrl')
-          if [[ -z "$APK_URL" || "$APK_URL" == "null" ]]; then
-            echo "❌ Error: No APK URL found!"
-            exit 1
-          fi
-          echo "📥 Downloading APK from $APK_URL..."
-          curl -L "$APK_URL" -o app-release.apk
-          echo "APK_PATH=app-release.apk" >> $GITHUB_OUTPUT
+            - name: '📤 Upload Changelog'
+              uses: actions/upload-artifact@v4
+              with:
+                  name: changelog
+                  path: changelog.txt
 
-      - name: "📤 Upload Artifact"
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-apk
-          path: app-release.apk
+    create-release:
+        name: '🚀 Smart Release Publisher'
+        runs-on: ubuntu-latest
+        needs: [build-android, download-apk, generate-changelog]
+        steps:
+            # ========================
+            # 📥 Artifact Retrieval
+            # ========================
+            - name: '📦 Get APK Artifact'
+              uses: actions/download-artifact@v4
+              with:
+                  name: android-apk
 
-  generate-changelog:
-    name: "📜 Changelog Generator"
-    runs-on: ubuntu-latest
-    needs: build-android
-    outputs:
-      changelog: ${{ steps.changelog.outputs.CHANGELOG }}
-    steps:
-      # ========================
-      # 🛠️ Repository Setup
-      # ========================
-      - name: "📂 Checkout with Full History"
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+            - name: '📄 Get Changelog'
+              uses: actions/download-artifact@v4
+              with:
+                  name: changelog
 
-      # ========================
-      # 📄 Changelog Generation
-      # ========================
-      - name: "📋 Create Release Notes"
-        id: changelog
-        run: |
-          echo "📝 Generating changelog from git history..."
-          CHANGELOG=$(git log --pretty=format:"- %s (%h) by %an" -n 15)
-          echo "$CHANGELOG" > changelog.txt
+            # ========================
+            # 🏷️ Release Creation
+            # ========================
+            - name: '🎚️ Determine Release Type'
+              id: release-type
+              run: |
+                  echo "🔍 Detecting release type..."
+                  if [ "${{ needs.build-android.outputs.is_production }}" = "true" ]; then
+                    echo "🟢 Production release detected"
+                    RELEASE_TAG="v${{ needs.build-android.outputs.app_version }}"
+                    RELEASE_TITLE="Production Release v${{ needs.build-android.outputs.app_version }}"
+                  else
+                    echo "🟡 Pre-release build detected"
+                    BRANCH_NAME="${{ needs.build-android.outputs.branch_name }}"
+                    RELEASE_TAG="prerelease-${BRANCH_NAME}-${{ needs.build-android.outputs.build_date }}"
+                    RELEASE_TITLE="Pre-release (${BRANCH_NAME}) v${{ needs.build-android.outputs.app_version }}"
+                  fi
+                  echo "RELEASE_TAG=${RELEASE_TAG}" >> $GITHUB_OUTPUT
+                  echo "RELEASE_TITLE=${RELEASE_TITLE}" >> $GITHUB_OUTPUT
 
-          delimiter=$(openssl rand -hex 6)
-          echo "CHANGELOG<<${delimiter}" >> $GITHUB_OUTPUT
-          cat changelog.txt >> $GITHUB_OUTPUT
-          echo "${delimiter}" >> $GITHUB_OUTPUT
-
-      - name: "📤 Upload Changelog"
-        uses: actions/upload-artifact@v4
-        with:
-          name: changelog
-          path: changelog.txt
-
-  create-release:
-    name: "🚀 Smart Release Publisher"
-    runs-on: ubuntu-latest
-    needs: [build-android, download-apk, generate-changelog]
-    steps:
-      # ========================
-      # 📥 Artifact Retrieval
-      # ========================
-      - name: "📦 Get APK Artifact"
-        uses: actions/download-artifact@v4
-        with:
-          name: android-apk
-
-      - name: "📄 Get Changelog"
-        uses: actions/download-artifact@v4
-        with:
-          name: changelog
-
-      # ========================
-      # 🏷️ Release Creation
-      # ========================
-      - name: "🎚️ Determine Release Type"
-        id: release-type
-        run: |
-          echo "🔍 Detecting release type..."
-          if [ "${{ needs.build-android.outputs.is_production }}" = "true" ]; then
-            echo "🟢 Production release detected"
-            RELEASE_TAG="v${{ needs.build-android.outputs.app_version }}"
-            RELEASE_TITLE="Production Release v${{ needs.build-android.outputs.app_version }}"
-          else
-            echo "🟡 Pre-release build detected"
-            BRANCH_NAME="${{ needs.build-android.outputs.branch_name }}"
-            RELEASE_TAG="prerelease-${BRANCH_NAME}-${{ needs.build-android.outputs.build_date }}"
-            RELEASE_TITLE="Pre-release (${BRANCH_NAME}) v${{ needs.build-android.outputs.app_version }}"
-          fi
-          echo "RELEASE_TAG=${RELEASE_TAG}" >> $GITHUB_OUTPUT
-          echo "RELEASE_TITLE=${RELEASE_TITLE}" >> $GITHUB_OUTPUT
-
-      - name: "🎉 Publish GitHub Release"
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.release-type.outputs.RELEASE_TAG }}
-          name: ${{ steps.release-type.outputs.RELEASE_TITLE }}
-          body_path: changelog.txt
-          files: app-release.apk
-          prerelease: ${{ needs.build-android.outputs.is_production != 'true' }}
+            - name: '🎉 Publish GitHub Release'
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: ${{ steps.release-type.outputs.RELEASE_TAG }}
+                  name: ${{ steps.release-type.outputs.RELEASE_TITLE }}
+                  body_path: changelog.txt
+                  files: app-release.apk
+                  prerelease: ${{ needs.build-android.outputs.is_production != 'true' }}
