@@ -142,6 +142,8 @@ jobs:
             - name: '🏗️ Build Release APK with Gradle'
               run: |
                   export ANDROID_HOME="/home/digitalnomad91/Android/Sdk"
+                  # Disable Sentry source map upload in CI (requires auth token)
+                  export SENTRY_DISABLE_AUTO_UPLOAD=true
                   cd android
                   ./gradlew clean assembleRelease \
                     -x bundleRelease \
