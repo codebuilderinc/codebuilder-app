@@ -112,7 +112,7 @@ jobs:
             - name: '🔍 Verify & Configure Android SDK'
               run: |
                   # Force a fixed SDK location for the runner
-                  ANDROID_HOME="/home/digitalnomad91/Android/sdk"
+                  ANDROID_HOME="/home/digitalnomad91/Android/Sdk"
 
                   # Export for subsequent steps
                   echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
@@ -141,7 +141,7 @@ jobs:
 
             - name: '🏗️ Build Release APK with Gradle'
               run: |
-                  export ANDROID_HOME="/home/digitalnomad91/Android/sdk"
+                  export ANDROID_HOME="/home/digitalnomad91/Android/Sdk"
                   cd android
                   ./gradlew clean assembleRelease \
                     -x bundleRelease \
