@@ -5,7 +5,7 @@ permissions:
 on:
     workflow_dispatch:
     push:
-        branches: [main] #["**"]
+        branches: ['main'] #["**"]
         paths:
             - '.github/workflows/local-android-build.yml' # Allow manual re-runs of this work6flow
 
@@ -111,23 +111,8 @@ jobs:
             # ========================
             - name: '🔍 Verify & Configure Android SDK'
               run: |
-                  # Auto-detect ANDROID_HOME if not set
-                  if [ -z "$ANDROID_HOME" ]; then
-                    echo "⚠️  ANDROID_HOME not set, attempting auto-detection..."
-                    
-                    # Try common locations
-                    if [ -d "$HOME/Android/Sdk" ]; then
-                      export ANDROID_HOME="$HOME/Android/Sdk"
-                      echo "✅ Found Android SDK at: $ANDROID_HOME"
-                    elif [ -d "$HOME/Library/Android/sdk" ]; then
-                      export ANDROID_HOME="$HOME/Library/Android/sdk"
-                      echo "✅ Found Android SDK at: $ANDROID_HOME"
-                    else
-                      echo "❌ Error: ANDROID_HOME not set and Android SDK not found!"
-                      echo "Please ensure Android SDK is installed at ~/Android/Sdk or set ANDROID_HOME environment variable"
-                      exit 1
-                    fi
-                  fi
+                  # Force a fixed SDK location for the runner
+                  ANDROID_HOME="/home/digitalnomad91/Android/sdk"
 
                   # Export for subsequent steps
                   echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
@@ -156,7 +141,7 @@ jobs:
 
             - name: '🏗️ Build Release APK with Gradle'
               run: |
-                  export ANDROID_HOME=${ANDROID_HOME:-$HOME/Android/Sdk}
+                  export ANDROID_HOME="/home/digitalnomad91/Android/sdk"
                   cd android
                   ./gradlew clean assembleRelease \
                     -x bundleRelease \
