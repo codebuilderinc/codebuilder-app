@@ -13,7 +13,7 @@
 sudo systemctl status actions.runner.*
 
 # If not running, start it
-sudo systemctl start actions.runner.*
+sudo                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              systemctl start actions.runner.*
 
 # Check runner logs
 tail -50 ~/.github-runner/_diag/Runner_*.log
@@ -60,6 +60,7 @@ ls $ANDROID_HOME/platforms  # Should list Android API levels
 **Symptom:** Build fails with Java errors or Java incompatibility
 
 **Verify Java:**
+
 ```bash
 java -version
 # Should show Java 17 or higher
@@ -73,6 +74,7 @@ cd android
 **Install Java 17+:**
 
 Linux (Ubuntu/Debian):
+
 ```bash
 sudo apt update
 sudo apt install openjdk-17-jdk
@@ -82,6 +84,7 @@ java -version
 ```
 
 macOS (Homebrew):
+
 ```bash
 brew install openjdk@17
 sudo ln -sfn /usr/local/opt/openjdk@17/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-17.jdk
@@ -287,6 +290,7 @@ sudo ./svc.sh restart
 **Likely cause:** Build is really just slow (normal for cold builds)
 
 **Monitor progress:**
+
 ```bash
 # SSH into build machine
 # Check gradle processes
@@ -303,6 +307,7 @@ iftop
 ```
 
 **Optimization:**
+
 - First build: 20-30 minutes is normal
 - Incremental: 5-10 minutes
 - Close heavy applications
@@ -313,6 +318,7 @@ iftop
 **Symptom:** `jq -r '.version' version.json` fails
 
 **Verify:**
+
 ```bash
 # Check file exists
 ls -la version.json
@@ -419,8 +425,8 @@ If stuck:
 ```yaml
 # Add to workflow for verbose output:
 env:
-  GRADLE_OPTS: "-Dorg.gradle.logging.level=debug"
-  DEBUG: "true"
+    GRADLE_OPTS: '-Dorg.gradle.logging.level=debug'
+    DEBUG: 'true'
 ```
 
 Then check logs for detailed build information.
