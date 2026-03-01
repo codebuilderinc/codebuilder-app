@@ -20,14 +20,14 @@ A complete alternative to Expo.dev for building Android APKs **without paying $2
 
 ## What Got Created
 
-| File | Purpose |
-|------|---------|
+| File                                        | Purpose                                        |
+| ------------------------------------------- | ---------------------------------------------- |
 | `.github/workflows/local-android-build.yml` | **The actual workflow** - runs on your machine |
-| `LOCAL_BUILD_QUICKSTART.md` | Quick 5-step reference |
-| `LOCAL_BUILD_SETUP.md` | Complete setup guide with prerequisites |
-| `LOCAL_BUILD_TROUBLESHOOTING.md` | Solutions for 15+ common issues |
-| `LOCAL_BUILD_ARCHITECTURE.md` | Visual diagrams & architecture |
-| `IMPLEMENTATION_SUMMARY.md` | Overview & comparison |
+| `LOCAL_BUILD_QUICKSTART.md`                 | Quick 5-step reference                         |
+| `LOCAL_BUILD_SETUP.md`                      | Complete setup guide with prerequisites        |
+| `LOCAL_BUILD_TROUBLESHOOTING.md`            | Solutions for 15+ common issues                |
+| `LOCAL_BUILD_ARCHITECTURE.md`               | Visual diagrams & architecture                 |
+| `IMPLEMENTATION_SUMMARY.md`                 | Overview & comparison                          |
 
 ---
 
@@ -52,6 +52,7 @@ git config user.name
 ```
 
 **If ANDROID_HOME is empty:**
+
 ```bash
 export ANDROID_HOME=~/Android/Sdk
 echo 'export ANDROID_HOME=~/Android/Sdk' >> ~/.zshrc
@@ -67,8 +68,8 @@ source ~/.zshrc
 5. **Name it:** "local-android-runner"
 6. **Expiration:** 90 days (or longer)
 7. **Select scopes:** Check ✅:
-   - `repo` (Full control of private repositories)
-   - `admin:repo_hook` (Read/write access to hooks)
+    - `repo` (Full control of private repositories)
+    - `admin:repo_hook` (Read/write access to hooks)
 8. Click: **Generate token**
 9. **Copy it immediately** and save somewhere secure (you won't see it again!)
 
@@ -118,6 +119,7 @@ sudo ./svc.sh status
 5. Should show: **Green dot with "Idle"**
 
 If it shows red/offline:
+
 ```bash
 cd ~/.github-runner
 ./run.sh --diagnostics
@@ -134,6 +136,7 @@ cd ~/.github-runner
 7. Watch the build run in real-time!
 
 **Build time:**
+
 - First build (cold): 20-30 minutes
 - Future builds (warm cache): 5-10 minutes
 
@@ -144,11 +147,13 @@ cd ~/.github-runner
 ### Download Your APK
 
 **Option A: From GitHub Actions**
+
 - Go to **Actions** tab → Your workflow run
 - Scroll down to **Artifacts**
 - Download `android-apk-local`
 
 **Option B: From GitHub Releases**
+
 - Go to **Releases** tab (right side, above tags)
 - Download the APK file from the release
 
@@ -167,15 +172,18 @@ adb -e install app-release-v1.0.80-build-*.apk
 ## How to Use Going Forward
 
 ### Automatic Builds (Every Push)
+
 The workflow runs automatically on every push to any branch.
 
 ### Manual Builds Anytime
+
 1. GitHub: **Actions** tab
 2. **Local Android Build (Self-Hosted)**
 3. **Run workflow**
 4. Done! Check progress in real-time
 
 ### Check Build Status
+
 - GitHub: **Actions** tab → Your workflow run
 - See real-time logs, errors, artifacts, and releases
 
@@ -184,21 +192,25 @@ The workflow runs automatically on every push to any branch.
 ## Key Features
 
 ✅ **Cost Savings**
+
 - No Expo.dev subscription
 - No build credits to buy
 - Only pay for electricity (~$5-20/month)
 
 ✅ **Version Management**
+
 - Auto-increments version on main branch
 - Pre-release versions for dev branches
 - Build metadata tracked
 
 ✅ **GitHub Integration**
+
 - Automatic releases created
 - Changelogs generated from git commits
 - Artifacts retained for 14 days
 
 ✅ **Full Control**
+
 - Customize build process
 - Full access to Gradle configuration
 - Can adjust build parameters
@@ -207,14 +219,14 @@ The workflow runs automatically on every push to any branch.
 
 ## Troubleshooting Quick Links
 
-| Problem | Solution |
-|---------|----------|
-| Runner offline | See `LOCAL_BUILD_SETUP.md` Step 2 |
-| ANDROID_HOME not found | Set it: `export ANDROID_HOME=~/Android/Sdk` |
-| Java wrong version | Install Java 17: `sudo apt install openjdk-17-jdk` |
-| Build never starts | Check runner is online (Step 4 above) |
-| APK not generated | See `LOCAL_BUILD_TROUBLESHOOTING.md` #7 |
-| Other issues | See `LOCAL_BUILD_TROUBLESHOOTING.md` |
+| Problem                | Solution                                           |
+| ---------------------- | -------------------------------------------------- |
+| Runner offline         | See `LOCAL_BUILD_SETUP.md` Step 2                  |
+| ANDROID_HOME not found | Set it: `export ANDROID_HOME=~/Android/Sdk`        |
+| Java wrong version     | Install Java 17: `sudo apt install openjdk-17-jdk` |
+| Build never starts     | Check runner is online (Step 4 above)              |
+| APK not generated      | See `LOCAL_BUILD_TROUBLESHOOTING.md` #7            |
+| Other issues           | See `LOCAL_BUILD_TROUBLESHOOTING.md`               |
 
 ---
 
@@ -272,12 +284,14 @@ App runs on your device! ✅
 ## Cost Comparison
 
 ### With Local Build (YOUR NEW SETUP)
+
 - Initial setup: 15 minutes
 - Monthly cost: $5-20 (your electricity)
 - Build limit: Unlimited (while online)
 - **Annual cost: $60-240**
 
 ### With EAS Only (Old Way)
+
 - Setup: Already done
 - Monthly cost: $20-100+
 - Build limit: Depends on plan
@@ -291,14 +305,15 @@ App runs on your device! ✅
 
 You can use both workflows:
 
-| Use This | When | Why |
-|----------|------|-----|
-| **Local Build** | Building Android APK | Free, instant, full control |
-| **Local Build** | You're at your machine | Saves money |
-| **EAS Build** | Building iOS app | Local build can't do iOS |
-| **EAS Build** | Your machine is offline | Doesn't depend on your computer |
+| Use This        | When                    | Why                             |
+| --------------- | ----------------------- | ------------------------------- |
+| **Local Build** | Building Android APK    | Free, instant, full control     |
+| **Local Build** | You're at your machine  | Saves money                     |
+| **EAS Build**   | Building iOS app        | Local build can't do iOS        |
+| **EAS Build**   | Your machine is offline | Doesn't depend on your computer |
 
 To switch:
+
 1. Just keep both workflows enabled
 2. Use GitHub branch protection rules to control which builds are required
 3. Manually choose which to trigger
@@ -341,6 +356,7 @@ sudo ./svc.sh uninstall && rm -rf ~/.github-runner
 ## You're Ready! 🎉
 
 You now have:
+
 - ✅ A new workflow that builds APKs locally
 - ✅ No Expo.dev charges for the next 3+ days
 - ✅ Full version control and GitHub integration
@@ -356,16 +372,19 @@ Questions? See the troubleshooting guide or check GitHub Actions logs.
 ## Summary
 
 ✨ **What changed:**
+
 - New workflow file: `.github/workflows/local-android-build.yml`
 - Runs on YOUR machine (self-hosted runner)
 - Builds APKs without Expo charges
 
 🚀 **What you need to do:**
+
 1. Create GitHub PAT token
 2. Set up actions runner on your machine
 3. Trigger a build manually to test
 
 💰 **What you save:**
+
 - $20-100/month in Expo.dev charges
 - $240-1200/year!
 

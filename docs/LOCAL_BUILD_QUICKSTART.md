@@ -3,6 +3,7 @@
 ## TL;DR (5 Steps to Get Started)
 
 ### 1. Ensure Prerequisites
+
 ```bash
 # Check all required tools
 java -version        # Need Java 17+
@@ -12,6 +13,7 @@ adb --version       # Need Android platform tools
 ```
 
 ### 2. Set ANDROID_HOME (If Not Set)
+
 ```bash
 # Linux/macOS
 export ANDROID_HOME=~/Android/Sdk
@@ -23,11 +25,13 @@ echo $ANDROID_HOME  # Should show path
 ```
 
 ### 3. Create GitHub PAT
+
 - Go to github.com → Settings → Developer settings → Personal access tokens → Tokens (classic)
 - Generate new token with `repo` and `admin:repo_hook` scopes
 - Copy the token (save securely!)
 
 ### 4. Set Up Runner
+
 ```bash
 mkdir -p ~/.github-runner
 cd ~/.github-runner
@@ -47,7 +51,8 @@ sudo ./svc.sh start
 ```
 
 ### 5. Trigger Build
-- Go to GitHub: **Actions** → **Local Android Build (Self-Hosted)** 
+
+- Go to GitHub: **Actions** → **Local Android Build (Self-Hosted)**
 - Click **Run workflow**
 - Wait for completion (~15-30 mins depending on your machine)
 - Download APK from **Build artifacts** or **Releases**
@@ -115,17 +120,18 @@ sudo ./svc.sh start
 5. **Run at off-peak** - Less machine contention
 
 Typical build times:
+
 - Cold build (no cache): 20-30 minutes
 - Incremental build (from cache): 5-10 minutes
 
 ## File Locations
 
-| File | Purpose |
-|------|---------|
-| `.github/workflows/local-android-build.yml` | Main workflow |
-| `LOCAL_BUILD_SETUP.md` | Detailed setup guide |
-| `LOCAL_BUILD_QUICKSTART.md` | This file |
-| `LOCAL_BUILD_TROUBLESHOOTING.md` | Common issues |
+| File                                        | Purpose              |
+| ------------------------------------------- | -------------------- |
+| `.github/workflows/local-android-build.yml` | Main workflow        |
+| `LOCAL_BUILD_SETUP.md`                      | Detailed setup guide |
+| `LOCAL_BUILD_QUICKSTART.md`                 | This file            |
+| `LOCAL_BUILD_TROUBLESHOOTING.md`            | Common issues        |
 
 ## Common Commands
 
@@ -148,29 +154,32 @@ sudo ./svc.sh uninstall
 
 ## When to Use Each Workflow
 
-| Scenario | Use |
-|----------|-----|
-| Hit Expo.dev build limit | Local build ✅ |
-| Need iOS build | EAS build (iOS) ✅ |
-| Want managed service | EAS build ✅ |
-| Full control needed | Local build ✅ |
-| Budget constrained | Local build ✅ |
-| Machine offline | EAS build ✅ |
+| Scenario                 | Use                |
+| ------------------------ | ------------------ |
+| Hit Expo.dev build limit | Local build ✅     |
+| Need iOS build           | EAS build (iOS) ✅ |
+| Want managed service     | EAS build ✅       |
+| Full control needed      | Local build ✅     |
+| Budget constrained       | Local build ✅     |
+| Machine offline          | EAS build ✅       |
 
 ## Costs
 
 **Local Build:**
+
 - Equipment: One-time (computer you already have)
 - Electricity: ~$5-20/month depending on usage
 - GitHub storage: Free-2GB depending on plan
 
 **EAS Build:**
+
 - Build minutes: $20/month minimum
 - Additional builds: Extra charges
 
 ## Manual APK Installation
 
 After download:
+
 ```bash
 # Connect device via USB with USB debugging enabled
 adb install app-release-v1.0.80-build-*.apk
@@ -183,6 +192,7 @@ adb shell pm install /data/local/tmp/app-release-v1.0.80-build-*.apk
 ## Need Help?
 
 See `LOCAL_BUILD_TROUBLESHOOTING.md` for:
+
 - Runner offline issues
 - Java version problems
 - Build failures
